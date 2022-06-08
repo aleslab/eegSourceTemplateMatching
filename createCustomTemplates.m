@@ -101,6 +101,8 @@ listLabels = {'Fp1' 'Fp2' 'Fz' 'F7' 'F3' 'C3' 'T7' 'P3' 'P7' 'Pz' 'O1' 'Oz' ...
 matchIndex = arrayfun(@(x) cellfind(chanLabelsData,listLabels{x}),1:length(listLabels),'uni',false);
 matchIndex = cell2mat(matchIndex(~cellfun('isempty', matchIndex))); % keep only non-empty indexes
 
+
+
 % if data does not contain channel labels
 % ask user to enter a set of channel labels with their corresponding
 % indexes from standard 10-20
@@ -166,13 +168,24 @@ if eeglabUser
     else % RAS
         coordToMatch = [[channelInfo.X]; [channelInfo.Y]; [channelInfo.Z]]';
     end
+    
+    % Discard any electrodes with empty locations
+    tf = arrayfun(@(k) ~isempty(channelInfo(k).X), 1:numel(channelInfo));
+    channelInfo = channelInfo(tf);
+
 else % fieldtrip
     if strcmp(coordsys,'ALS')
         coordToMatch = [-channelInfo.chanpos(:,2) channelInfo.chanpos(:,1) channelInfo.chanpos(:,3)];
     else % RAS
         coordToMatch = channelInfo.chanpos;
     end
+
+    % Discard any electrodes with empty locations
+    tf = arrayfun(@(k) ~isempty(channelInfo(k).chanpos), 1:numel(channelInfo));
+    channelInfo = channelInfo(tf);
+
 end
+
 
 
 % align the montages using the matching electrodes
@@ -245,6 +258,14 @@ customTemplates.ref = refIndex;
 customTemplates.matchedLabels = chanLabels(bestElec);
 customTemplates.matchDistances = euclideanDist; % in mm
 
+
+figure()
+hist(customTemplates.matchDistances)
+xlabel('Distance in mm')
+ylabel('Number of Electrods')
+title('Distance to HighRes template electrode')
+
+
 % plot optional topographies 
 if eeglabUser && plotMap == 1
     loc = [1:9;10:18]; loc = loc(:);
@@ -253,7 +274,9 @@ if eeglabUser && plotMap == 1
     for roi=1:18
         subplot(2,9,loc(roi))
         topoplot(customTemplates.data(:,roi),channelInfo,'colormap','jet');
-        caxis([-mm mm]);title(listROIs(roi));
+        caxis([-mm mm]);
+        title(listROIs(roi));
+        axis equal
     end
 end  
 
