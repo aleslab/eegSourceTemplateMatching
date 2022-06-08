@@ -30,7 +30,7 @@ for ll = 1:size(data, 2)
 end
 
 %If requested compute Tikhonov regularized inverse matrix
-if nargin >=5
+if nargout >=5
     reg_s = diag( s ./ (s.^2 + lambda^2 ));
     regularizedInverse = v * reg_s * u';
 end

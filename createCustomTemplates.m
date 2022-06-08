@@ -171,7 +171,7 @@ if eeglabUser
     
     % Discard any electrodes with empty locations
     tf = arrayfun(@(k) ~isempty(channelInfo(k).X), 1:numel(channelInfo));
-    channelInfo = channelInfo(tf);
+    
 
 else % fieldtrip
     if strcmp(coordsys,'ALS')
@@ -182,11 +182,18 @@ else % fieldtrip
 
     % Discard any electrodes with empty locations
     tf = arrayfun(@(k) ~isempty(channelInfo(k).chanpos), 1:numel(channelInfo));
-    channelInfo = channelInfo(tf);
 
 end
 
+if any(~tf) %If any channels are empty
+    removedChans = strjoin({channelInfo(~tf).labels});
+    electrodesIncludedLabels = {channelInfo(tf).labels};
+    warning('%d electrodes do not have location data, removing %s from template',sum(~tf),removedChans)
+    
+    channelInfo = channelInfo(tf);
+end
 
+electrodesIncludedIndex = find(tf);
 
 % align the montages using the matching electrodes
 % Add dimension for "homogeneous coordinates"  for affine fitting.
@@ -257,7 +264,9 @@ customTemplates.ROInames = listROIs';
 customTemplates.ref = refIndex;
 customTemplates.matchedLabels = chanLabels(bestElec);
 customTemplates.matchDistances = euclideanDist; % in mm
-
+customTemplates.electrodesIncludedIndex = electrodesIncludedIndex; % Electrodes 
+customTemplates.electrodesIncludedLabels = electrodesIncludedLabels; % Electrodes 
+ 
 
 figure()
 hist(customTemplates.matchDistances)
