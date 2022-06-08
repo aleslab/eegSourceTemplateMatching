@@ -1,8 +1,8 @@
-% eegplugin_optimalsubspace() - EEGLAB plugin for filtering data using
-%                               optimal subspace filters
+% eegplugin_visualareatemplate() - EEGLAB plugin for fitting data using
+%                                  visual area templates
 %
 % Usage:
-%   >> eegplugin_optimalsubspace(fig, trystrs, catchstrs);
+%   >> eegplugin_visualareatemplate(fig, trystrs, catchstrs);
 %
 % Inputs:
 %   fig        - [integer]  EEGLAB figure
@@ -11,7 +11,6 @@
 %
 % Author: Justin Ales, University of St Andrews, 2019
 
-%123456789012345678901234567890123456789012345678901234567890123456789012
 
 % Copyright (C) 2022 Justin Ales
 %

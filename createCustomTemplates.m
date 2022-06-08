@@ -7,7 +7,7 @@ function customTemplates = createCustomTemplates(channelInfo,varargin)
 % your data (see below for details)
 % usage EEGlab: customTemplates = createCustomTemplates(EEG.chanlocs)
 % usage Fieldtrip: customTemplates = createCustomTemplates(cfg.elec)
-
+%
 % input channelInfo: variable containing electrode definition
 % For EEGlab users = EEG.chanlocs (obtained from readlocs or using the GUI)
 % For better results use the MNI channel location file for electrode 
@@ -19,7 +19,7 @@ function customTemplates = createCustomTemplates(channelInfo,varargin)
 %                  electrode
 %   elec.label   = cell-array of length N with the label of each electrode
 %   elec.chanpos = Nx3 matrix with coordinates of each sensor
-
+%
 % output is a structure containing:
 %   customTemplates.data = matrix of EEG response for N electrodes x 18 ROI-templates 
 %   customTemplates.ROInames = cell-array of the 18 ROI names (for L-left and R-right separately)
@@ -27,7 +27,7 @@ function customTemplates = createCustomTemplates(channelInfo,varargin)
 %   each electrode (same as the dataset)
 %   customTemplates.ref = reference used for the templates (0=average)
 %   customTemplates.matchedLabels = best matching labels from the templates
-
+%
 % Optional input (has to be in the following order, [] to skip one):
 % 1st: Reference of the EEG montage. Default is read from channelInfo for 
 % EEGlab. If not found, ask user or can be entered here. The reference 
@@ -40,13 +40,13 @@ function customTemplates = createCustomTemplates(channelInfo,varargin)
 % (see below for more details. Other coordinate system can potentially be 
 % added in the program) 
 % usage: customTemplates = createCustomTemplates(EEG.chanlocs,[],[],'RAS')
-
+%
 % To do the fitting, need 3-D cartesian coordinates of the electrodes
 % corresponding to the EEG montage that is used AND at least 8 channel 
 % labels to match. These can be extracted from the dataset or entered 
 % manually when prompted if no label is found.
 % Also need the reference of the montage
-
+%
 % The ROI templates were created based on 3D electrode coordinates from the 
 % fieldtrip standard_1005.elc file constructed by Robert Oostenveld.
 % The file can be read with ft_read_sens. 
