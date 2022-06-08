@@ -1,4 +1,4 @@
-function [betaMinNormBest, lambda,residualNorm,solutionNorm] = sourceLoc(template , data, plotLcurve)
+function [betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] = sourceLoc(template , data, plotLcurve)
 % Source localisation using lcurve regularisation
 % INPUT:
 % template = templates (electrodes x ROI)
@@ -8,9 +8,10 @@ function [betaMinNormBest, lambda,residualNorm,solutionNorm] = sourceLoc(templat
 % use createCustomTemplates to fit your EEG montage if needed
 % OUTPUT:
 % betaMinNormBest = activity in each ROI for the best regularisation value
-% other optional output: lambda = regularisation term, 
+% other optional output: 
+% lambda = regularisation term, 
 % residuals & solutions from the minimum-norm estimates 
-% USAGE: roiActivity = minNormTemplate_lcurve(template, data)
+% USAGE: roiActivity = sourceLoc(template, data)
 
 if (nargin==2), plotLcurve =0; end % do not plot Lcurve
 
@@ -26,4 +27,10 @@ end
 betaMinNormBest = zeros([size(template,2) size(data, 2)]);
 for ll = 1:size(data, 2)
     betaMinNormBest(:, ll) = tikhonov(u, s, v, data(:, ll), lambda);
+end
+
+%If requested compute Tikhonov regularized inverse matrix
+if nargin >=5
+    reg_s = diag( s ./ (s.^2 + lambda^2 ));
+    regularizedInverse = v * reg_s * u';
 end
