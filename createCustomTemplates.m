@@ -70,6 +70,10 @@ function customTemplates = createCustomTemplates(channelInfo,varargin)
 if length(channelInfo) == 1 % not eeglab
     eeglabUser = 0; coordsys = 'RAS';chanLabelsData = channelInfo.label;
     plotMap = 0;refIndex=[];
+    % Check if any electrodes with empty locations
+    % Don't think chanpos can ever be empty with fieldtrip struct...
+    tf = arrayfun(@(k) ~isempty(channelInfo.chanpos(k)), 1:length(channelInfo.chanpos));
+    elecExcludedIndex = find(~tf); elecIncludedIndex = find(tf);
 else
     eeglabUser = 1; coordsys = 'ALS';chanLabelsData = {channelInfo.labels};
     plotMap = 1;
@@ -80,6 +84,9 @@ else
     else
         refIndex = channelInfo(1).ref;
     end
+    % Check if any electrodes with empty locations
+    tf = arrayfun(@(k) ~isempty(channelInfo(k).X), 1:numel(channelInfo));
+    elecExcludedIndex = find(~tf); elecIncludedIndex = find(tf);
 end
 if ~isempty(varargin) 
     refIndex = varargin{1}; % use reference entered by user
@@ -97,8 +104,10 @@ fprintf('Assumes %s coordinate system.\n',coordsys)
 listLabels = {'Fp1' 'Fp2' 'Fz' 'F7' 'F3' 'C3' 'T7' 'P3' 'P7' 'Pz' 'O1' 'Oz' ...
     'O2' 'P4' 'P8' 'T8' 'C4' 'F4' 'F8' 'Cz' };
 
+
+    
 % get chan indexes that match between the listLabels and the data
-matchIndex = arrayfun(@(x) cellfind(chanLabelsData,listLabels{x}),1:length(listLabels),'uni',false);
+matchIndex = arrayfun(@(x) cellfind(chanLabelsData(elecIncludedIndex),listLabels{x}),1:length(listLabels),'uni',false);
 matchIndex = cell2mat(matchIndex(~cellfun('isempty', matchIndex))); % keep only non-empty indexes
 
 
@@ -130,7 +139,7 @@ if length(matchIndex)<8
     end
 else
     % list of the labels to match
-    listLabelMatch = chanLabelsData(matchIndex);
+    listLabelMatch = chanLabelsData(elecIncludedIndex(matchIndex));
 end
 
 
@@ -163,6 +172,8 @@ load(templateFile)
 % get the indexes that match with the data (& from the list of channels)
 matchIndexROI = cell2mat(arrayfun(@(x) cellfind(elecDef.label,listLabelMatch{x}),1:length(listLabelMatch),'uni',false));
 
+
+
 % get electrodes coordinate to match to the templates
 % change orientation if necessary
 if eeglabUser
@@ -172,31 +183,15 @@ if eeglabUser
         coordToMatch = [[channelInfo.X]; [channelInfo.Y]; [channelInfo.Z]]';
     end
     
-    % Discard any electrodes with empty locations
-    tf = arrayfun(@(k) ~isempty(channelInfo(k).X), 1:numel(channelInfo));
-    
-
 else % fieldtrip
     if strcmp(coordsys,'ALS')
         coordToMatch = [-channelInfo.chanpos(:,2) channelInfo.chanpos(:,1) channelInfo.chanpos(:,3)];
     else % RAS
         coordToMatch = channelInfo.chanpos;
     end
-
-    % Discard any electrodes with empty locations
-    tf = arrayfun(@(k) ~isempty(channelInfo(k).chanpos), 1:numel(channelInfo));
-
-end
-
-if any(~tf) %If any channels are empty
-    removedChans = strjoin({channelInfo(~tf).labels});
-    electrodesIncludedLabels = {channelInfo(tf).labels};
-    warning('%d electrodes do not have location data, removing %s from template',sum(~tf),removedChans)
     
-    channelInfo = channelInfo(tf);
 end
 
-electrodesIncludedIndex = find(tf);
 
 % align the montages using the matching electrodes
 % Add dimension for "homogeneous coordinates"  for affine fitting.
@@ -226,15 +221,30 @@ title('Checking alignment')
 % returns electrode indexes (same length as nb of chan) & distances
 [bestElec, euclideanDist] = knnsearch(elecDef.chanpos(:,1:3),elecTrans(:,1:3));
 
+% detect electrodes that are very far from any existing electrodes in the
+% template. These are probably not in the template so should be removed
+% from the data (which would be the case for electrodes on the face or
+% below the Nz/T9/Iz/T10 line as in EGI montage).
+badMatchingElec = find(euclideanDist>=30); % in mm
+if badMatchingElec>0
+    disp(['Could not find satisfactory match for electrode(s): ' num2str(elecIncludedIndex(badMatchingElec))])
+    disp('One reason could be that these electrodes are not present in the 10-05 standard system.')
+    elecExcludedIndex = [elecExcludedIndex elecIncludedIndex(badMatchingElec)];
+    elecIncludedIndex = setdiff(elecIncludedIndex, elecIncludedIndex(badMatchingElec));
+end
+
 % create new custom template using the best matching electrodes
-matchedTemplate = avMap(bestElec,:); 
+% BUT without the bad matching electrodes
+keepElec = setdiff(1:length(bestElec),badMatchingElec);
+matchedTemplate = avMap(bestElec(keepElec),:); 
 
 figure; scatter3(elecDef.chanpos(bestElec,1),elecDef.chanpos(bestElec,2),elecDef.chanpos(bestElec,3),'filled')
-hold on; scatter3(elecTrans(:,1),elecTrans(:,2),elecTrans(:,3))
+hold on; scatter3(elecTrans(keepElec,1),elecTrans(keepElec,2),elecTrans(keepElec,3))
 title('Best matching electrodes')
 
 
-
+%%%% This part (interpolation) has not been modified to deal with electrodes 
+%%%% with no location or for very far appart electrodes
 %%%%%% interpolate the electrodes (exponential weighted)
 % pairwise distance between each electrode locations of the current 
 % montage and the template   
@@ -246,7 +256,10 @@ normDist = weightedDist ./ repmat(sum(weightedDist),length(weightedDist),1);
 % apply interpolation
 interpTemplate = (avMap' * normDist)'; 
 
-    
+if ~isempty(elecExcludedIndex)
+    warning('Some electrodes have NOT be included in the templates and will need to be removed from your data before running templateFit (list in electrodesExcludedIndex electrodesExcludedLabels)')
+end
+
 
 % re-reference the templates
 if refIndex == 0
@@ -259,17 +272,19 @@ else
     rerefTemplatesInterp = bsxfun(@minus,interpTemplate, interpTemplate(refIndex,:)); 
 end
 
+
 % output structure
 customTemplates.data = rerefTemplates;
 customTemplates.dataInterp = rerefTemplatesInterp;
-customTemplates.chanLabels = chanLabelsData';
+customTemplates.chanLabels = chanLabelsData(elecIncludedIndex)';
 customTemplates.ROInames = listROIs';
 customTemplates.ref = refIndex;
-customTemplates.matchedLabels = chanLabels(bestElec);
+customTemplates.matchedLabels = chanLabels(bestElec(keepElec));
 customTemplates.matchDistances = euclideanDist; % in mm
-customTemplates.electrodesIncludedIndex = electrodesIncludedIndex; % Electrodes 
-customTemplates.electrodesIncludedLabels = electrodesIncludedLabels; % Electrodes 
- 
+customTemplates.electrodesIncludedIndex = elecIncludedIndex; 
+customTemplates.electrodesExcludedIndex = elecExcludedIndex;
+customTemplates.electrodesExcludedLabels = chanLabelsData(elecExcludedIndex)';
+
 
 figure()
 hist(customTemplates.matchDistances)
