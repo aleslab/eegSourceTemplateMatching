@@ -123,13 +123,16 @@ if length(matchIndex)<8
                 msgError = errordlg('Please enter valid channel number','Input error','modal');
                 uiwait(msgError);
             else
+                listLabelMatch = listLabels(matchIndex>0);
                 matchIndex = matchIndex(matchIndex>0);
             end
         end
     end
+else
+    % list of the labels to match
+    listLabelMatch = chanLabelsData(matchIndex);
 end
-% list of the labels to match
-listLabelMatch = chanLabelsData(matchIndex);
+
 
 % reference of the EEG montage
 if isempty(refIndex) 
@@ -150,7 +153,7 @@ end
 % load templates (including elecDef)
 templateFile = ['templates' filesep 'template_Standard_1005.mat'];
 templateDir = 1;
-while ~exist(templateFile) && templateDir~=0
+while ~exist(templateFile,'file') && templateDir~=0
 %     uiwait(msgbox('Could not find template_Standard_1005.mat file','Information','modal'));
     templateDir = uigetdir('','Please select the directory containing template_Standard_1005.mat');
     templateFile = [templateDir filesep 'template_Standard_1005.mat'];
