@@ -19,6 +19,12 @@ function [betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] 
 
 if (nargin==2), plotLcurve =0; end % do not plot Lcurve
 
+% check that template and data have the same number of electrodes
+% if not, return an error
+if size(template,1) ~= size(data,1)
+    error('Mismatch between the number of electrodes in the data and the template. Please check your template. Alternatively the data dimensions might be flipped (DIM1 = electrodes, DIM2 = timepoints)')
+end
+
 % check if data needs to be reshaped to a 2D matrix
 if iscell(data)
     sizeData = cellfun(@size,data,'uni',false);
