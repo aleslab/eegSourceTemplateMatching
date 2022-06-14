@@ -185,11 +185,11 @@ else % fieldtrip
 
 end
 
+electrodesIncludedLabels = {channelInfo(tf).labels};
+
 if any(~tf) %If any channels are empty
-    removedChans = strjoin({channelInfo(~tf).labels});
-    electrodesIncludedLabels = {channelInfo(tf).labels};
-    warning('%d electrodes do not have location data, removing %s from template',sum(~tf),removedChans)
-    
+    removedChans = strjoin({channelInfo(~tf).labels});    
+    warning('%d electrodes do not have location data, removing %s from template',sum(~tf),removedChans)    
     channelInfo = channelInfo(tf);
 end
 
