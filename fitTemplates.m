@@ -9,8 +9,8 @@ function [betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] 
 % or use a cell array (one cell per condition)
 % Time can be replaced by sine & cosine amplitudes when analysing frequencies
 % optional plotLcurve: default 0, 1 for plotting L-curve
-% optional lambda: use this value as regularisation parameter instead of
-% computing it automatically in the function (use this if the regularisation fails)
+% optional lambda: regularisation parameter. Will use this value instead of 
+% the one computed by the function (use this if the regularisation fails)
 % ATTENTION: Make sure that template & data have the same montage and the same reference   
 % use createCustomTemplates to fit your EEG montage if needed
 % OUTPUTS:
@@ -22,7 +22,9 @@ function [betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] 
 
 addpath('subfunctions')
 
-if (nargin==2), plotLcurve =0; lambda = []; end % do not plot Lcurve
+if (nargin==2), plotLcurve =0; lambda = []; end % do not plot Lcurve & compute best lambda
+if (nargin==3), lambda = []; end % plot Lcurve & compute best lambda
+
 
 % get weights from templates if struct
 if isstruct(template)
