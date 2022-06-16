@@ -13,14 +13,14 @@ mytemplates = createCustomTemplates(mychannellocations)
 It is recommended to plot mytemplates as a sanity check (set as default for 
 EEGLAB data, otherwise plot as you would for any topography). 
 
-2. Run fitTemplates to obtain the contributions of functional brain sources to
+2. Run fitEEGTemplates to obtain the contributions of functional brain sources to
 your EEG data. This function uses a L-curve regularisation. In case you get 
 a warning or the regularisation does not seem right: 
-a. Try plotting the L-curve when computing fitTemplates: 
-fitTemplates(data, templates, 1)
+a. Try plotting the L-curve when computing fitEEGTemplates: 
+fitEEGTemplates(data, templates, 1)
 b. Visually determine the corner of the L-curve.
 c. Use the value of this corner: 
-fitTemplates(data, templates, CornerValue)
+fitEEGTemplates(data, templates, CornerValue)
 
 For more details see help in functions.
 You can report any bug or suggest improvements at:
