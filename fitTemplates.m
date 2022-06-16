@@ -1,4 +1,4 @@
-function [betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] = sourceLoc(template , data, plotLcurve)
+function [betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] = fitTemplates(template , data, plotLcurve)
 % Fit EEG-templates (topographies of functional brain areas) to EEG-data
 % INPUTS:
 % template = templates for the current EEG montage, either a 2D matrix 
