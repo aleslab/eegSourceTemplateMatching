@@ -96,7 +96,7 @@ end
 
 %Put some checks in here-
 
-[betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] = sourceLoc(template , EEG.data(:,:))
+betaMinNormBest = fitEEGTemplates(EEG.data(:,:), template);
 
 % EEG.data(:,:) = filterWeights*EEG.data(:,:);
 % 
