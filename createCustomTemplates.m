@@ -22,7 +22,7 @@ function customTemplates = createCustomTemplates(channelInfo,varargin)
 %
 % output is a structure containing:
 %   customTemplates.weights = matrix of EEG response for N electrodes x 18 ROI-templates 
-%   customTemplates.ROInames = cell-array of the 18 ROI names (for L-left and R-right separately)
+%   customTemplates.listROIs = cell-array of the 18 ROI names (for L-left and R-right separately)
 %   customTemplates.chanLabels = cell-array of length N with the label of
 %   each electrode (same as the dataset)
 %   customTemplates.reference = reference used for the templates (0=average)
@@ -172,7 +172,7 @@ while length(refIndex)~=1 || ~ismember(refIndex,0:length(chanLabelsData)) % incl
     refIndex = str2num(answer{1});
 end
     
-% load templates (including elecDef)
+% load standard 10-05 templates 
 templateFile = ['templates' filesep 'template_Standard_1005.mat'];
 templateDir = 1;
 while ~exist(templateFile,'file') && templateDir~=0
@@ -183,7 +183,7 @@ end
 load(templateFile)
 
 % get the indexes that match with the data (& from the list of channels)
-matchIndexROI = cell2mat(arrayfun(@(x) cellfind(elecDef.label,listLabelMatch{x}),1:length(listLabelMatch),'uni',false));
+matchIndexROI = cell2mat(arrayfun(@(x) cellfind(templates1005.label,listLabelMatch{x}),1:length(listLabelMatch),'uni',false));
 
 
 
@@ -208,10 +208,10 @@ end
 % align the montages using the matching electrodes
 % Add dimension for "homogeneous coordinates"  for affine fitting.
 coordToMatch(:,4) = 1; 
-elecDef.chanpos(:,4) = 1; 
+templates1005.chanpos(:,4) = 1; 
 % Affine:   templateLoc = customLoc * AffineMtx
 % affineMtx = templateLoc/customLoc
-affineMtx = elecDef.chanpos(matchIndexROI,:)' / coordToMatch(matchIndex,:)' ;
+affineMtx = templates1005.chanpos(matchIndexROI,:)' / coordToMatch(matchIndex,:)' ;
 % Apply transform to all the electrodes of the montage
 elecTrans = (affineMtx*coordToMatch')';
 
@@ -220,7 +220,7 @@ elecTrans = (affineMtx*coordToMatch')';
 % check that the new selected electrodes are close to the ones from the template
 cmap = hsv(length(matchIndex)); 
 figure;scatter3(elecTrans(matchIndex,1),elecTrans(matchIndex,2),elecTrans(matchIndex,3),[],cmap,'filled')
-hold on;scatter3(elecDef.chanpos(matchIndexROI,1),elecDef.chanpos(matchIndexROI,2),elecDef.chanpos(matchIndexROI,3),[],cmap)
+hold on;scatter3(templates1005.chanpos(matchIndexROI,1),templates1005.chanpos(matchIndexROI,2),templates1005.chanpos(matchIndexROI,3),[],cmap)
 for nn=1:length(matchIndex)
     text(elecTrans(matchIndex(nn),1),elecTrans(matchIndex(nn),2),elecTrans(matchIndex(nn),3),listLabelMatch{nn})
 end
@@ -231,7 +231,7 @@ title('Checking alignment')
 % Use knnsearch to find the best match between electrodes of the current 
 % montage and the template
 % returns electrode indexes (same length as nb of chan) & distances
-[bestElec, euclideanDist] = knnsearch(elecDef.chanpos(:,1:3),elecTrans(:,1:3));
+[bestElec, euclideanDist] = knnsearch(templates1005.chanpos(:,1:3),elecTrans(:,1:3));
 
 % detect electrodes that are very far from any existing electrodes in the
 % template. These are probably not in the template so should be removed
@@ -250,25 +250,25 @@ end
 if ~interpolation
     % create new custom template using the closest electrodes
     % BUT without the bad matching electrodes
-    matchedTemplate = avMap(bestElec(keepElec),:);
+    matchedTemplate = templates1005.weights(bestElec(keepElec),:);
 else
     % interpolate the electrodes (exponential weighted)
     % interpolation is done including far off electrodes which are exluded 
     % only at the end. 
     % pairwise distance between each electrode locations of the current
     % montage and the template
-    distances = pdist2(elecDef.chanpos(:,1:3),elecTrans(:,1:3),  'squaredeuclidean');
+    distances = pdist2(templates1005.chanpos(:,1:3),elecTrans(:,1:3),  'squaredeuclidean');
     % weight distances exponentially
     weightedDist = exp(-distances/(20^2));
     % normalize
     normDist = weightedDist ./ repmat(sum(weightedDist),length(weightedDist),1);
     % apply interpolation
-    interpMap = (avMap' * normDist)';
+    interpMap = (templates1005.weights' * normDist)';
     % exclude far off electrode(s)
     matchedTemplate = interpMap(keepElec,:);
 end
 
-figure; scatter3(elecDef.chanpos(bestElec,1),elecDef.chanpos(bestElec,2),elecDef.chanpos(bestElec,3),'filled')
+figure; scatter3(templates1005.chanpos(bestElec,1),templates1005.chanpos(bestElec,2),templates1005.chanpos(bestElec,3),'filled')
 hold on; scatter3(elecTrans(keepElec,1),elecTrans(keepElec,2),elecTrans(keepElec,3))
 title('Best matching electrodes')
 
@@ -291,18 +291,18 @@ end
 
 % output structure
 customTemplates.weights = rerefTemplates;
-customTemplates.chanLabels = chanLabelsData(elecIncludedIndex)';
-customTemplates.ROInames = listROIs';
+customTemplates.label = chanLabelsData(elecIncludedIndex)';
+customTemplates.listROIs = templates1005.listROIs;
 customTemplates.reference = refIndex;
-customTemplates.matchedLabels = chanLabels(bestElec(keepElec));
-customTemplates.matchedDistances = euclideanDist; % in mm
-customTemplates.electrodesIncludedIndex = elecIncludedIndex; 
-customTemplates.electrodesExcludedIndex = elecExcludedIndex;
-customTemplates.electrodesExcludedLabels = chanLabelsData(elecExcludedIndex)';
+customTemplates.matchedLabel = templates1005.label(bestElec(keepElec));
+customTemplates.matchedDistance = euclideanDist; % in mm
+customTemplates.electrodesIncludedIndex = elecIncludedIndex'; 
+customTemplates.electrodesExcludedIndex = elecExcludedIndex';
+customTemplates.electrodesExcludedLabel = chanLabelsData(elecExcludedIndex)';
 
 
 figure()
-hist(customTemplates.matchedDistances)
+hist(customTemplates.matchedDistance)
 xlabel('Distance in mm')
 ylabel('Number of Electrods')
 title('Distance to HighRes template electrode')
