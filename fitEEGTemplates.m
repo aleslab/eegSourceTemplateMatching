@@ -1,6 +1,6 @@
-function [betaMinNormBest,lambda,residualNorm,solutionNorm,regularizedInverse] = fitTemplates(data, templates, plotLcurve, lambda)
-%fitTemplates fits EEG-templates (topographies of functional brain areas) to EEG-data
-%   A = fitTemplates(data, templates) returns a matrix A containing the
+function [betaMinNormBest,lambda,residualNorm,solutionNorm,regularizedInverse] = fitEEGTemplates(data, templates, plotLcurve, lambda)
+%fitEEGTemplates fits EEG-templates (topographies of functional brain areas) to EEG-data
+%   A = fitEEGTemplates(data, templates) returns a matrix A containing the
 %   contribution of functional brain regions to the EEG signal. 
 %   Its format corresponds to the input data (see below).
 %
@@ -19,13 +19,13 @@ function [betaMinNormBest,lambda,residualNorm,solutionNorm,regularizedInverse] =
 %
 %   OPTIONAL INPUT (has to be entered in the following order, use [] to skip one)
 %   Useful when the regularisation fails. For more info see README file
-%   regionActivity = fitTemplates(myEEGdata, mytemplates [, plotLcurve] [, lambda])
+%   regionActivity = fitEEGTemplates(myEEGdata, mytemplates [, plotLcurve] [, lambda])
 %       'plotLcurve'    - default 0, 1 for plotting L-curve.
 %       'lambda'        - regularisation parameter. Will use this value 
 %                         instead of the one computed by the function. 
 %
 %   OPTIONAL OUTPUT
-%   [betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] = fitTemplates(data, templates)
+%   [betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] = fitEEGTemplates(data, templates)
 %       'lambda'                - regularisation parameter used in the function. 
 %       'residualNorm'          - residuals of the minimum-norm estimates 
 %       'solutionNorm'          - solutions of the minimum-norm estimates 
@@ -33,10 +33,10 @@ function [betaMinNormBest,lambda,residualNorm,solutionNorm,regularizedInverse] =
 %
 %   USAGE: 
 %       % Returns the contribution of each functional brain regions to myEEGdata
-%       regionActivity = fitTemplates(myEEGdata, mytemplates)
+%       regionActivity = fitEEGTemplates(myEEGdata, mytemplates)
 %       % Returns the contribution of each functional brain 
 %       regions to myEEGdata using a pre-computed regularisation parameter
-%       regionActivity = fitTemplates(myEEGdata, mytemplates, [], 6000)
+%       regionActivity = fitEEGTemplates(myEEGdata, mytemplates, [], 6000)
 
 % Copyright (C) 2022 Marlene Poncet & Justin Ales, University of St
 % Andrews, marlene.poncet@gmail.com, jma23@st-andrews.ac.uk
@@ -92,8 +92,8 @@ if isempty(lambda)
     
     if lambda > lambdaGridMinNorm(4) || lambda < lambdaGridMinNorm(end-3)
         warning(['Risk of overfitting. You might want to test another (higher) regularisation value.' ...
-            'Try plotting L-curve to determine the corner of the curve using fitTemplates( templates , data, 1)'...
-            'Then use that corner value in fitTemplates( templates , data, 0, ''cornerValue'')'])
+            'Try plotting L-curve to determine the corner of the curve using fitEEGTemplates( templates , data, 1)'...
+            'Then use that corner value in fitEEGTemplates( templates , data, 0, ''cornerValue'')'])
     end
 end
     
