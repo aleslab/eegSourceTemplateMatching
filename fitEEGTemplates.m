@@ -1,7 +1,7 @@
-function [betaMinNormBest,lambda,residualNorm,solutionNorm,regularizedInverse] = fitEEGTemplates(data, templates, plotLcurve, lambda)
+function [areaActivity,lambda,residualNorm,solutionNorm,regularizedInverse] = fitEEGTemplates(data, templates, plotLcurve, lambda)
 %fitEEGTemplates fits EEG-templates (topographies of functional brain areas) to EEG-data
 %   A = fitEEGTemplates(data, templates) returns a matrix A containing the
-%   contribution of functional brain regions to the EEG signal. 
+%   normalised (from -1 to 1) contribution of functional brain regions to the EEG signal. 
 %   Its format corresponds to the input data (see below).
 %
 %   DATA is the average (across participants) EEG data. For a single
@@ -19,13 +19,13 @@ function [betaMinNormBest,lambda,residualNorm,solutionNorm,regularizedInverse] =
 %
 %   OPTIONAL INPUT (has to be entered in the following order, use [] to skip one)
 %   Useful when the regularisation fails. For more info see README file
-%   regionActivity = fitEEGTemplates(myEEGdata, mytemplates [, plotLcurve] [, lambda])
+%   areaActivity = fitEEGTemplates(myEEGdata, mytemplates [, plotLcurve] [, lambda])
 %       'plotLcurve'    - default 0, 1 for plotting L-curve.
 %       'lambda'        - regularisation parameter. Will use this value 
 %                         instead of the one computed by the function. 
 %
 %   OPTIONAL OUTPUT
-%   [betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] = fitEEGTemplates(data, templates)
+%   [areaActivity, lambda,residualNorm,solutionNorm,regularizedInverse] = fitEEGTemplates(data, templates)
 %       'lambda'                - regularisation parameter used in the function. 
 %       'residualNorm'          - residuals of the minimum-norm estimates 
 %       'solutionNorm'          - solutions of the minimum-norm estimates 
@@ -33,10 +33,10 @@ function [betaMinNormBest,lambda,residualNorm,solutionNorm,regularizedInverse] =
 %
 %   USAGE: 
 %       % Returns the contribution of each functional brain regions to myEEGdata
-%       regionActivity = fitEEGTemplates(myEEGdata, mytemplates)
-%       % Returns the contribution of each functional brain 
-%       regions to myEEGdata using a pre-computed regularisation parameter
-%       regionActivity = fitEEGTemplates(myEEGdata, mytemplates, [], 6000)
+%       areaActivity = fitEEGTemplates(myEEGdata, mytemplates)
+%       % Returns the contribution of each functional brain area
+%       to myEEGdata using a pre-computed regularisation parameter
+%       areaActivity = fitEEGTemplates(myEEGdata, mytemplates, [], 6000)
 
 % Copyright (C) 2022 Marlene Poncet & Justin Ales, University of St
 % Andrews, marlene.poncet@gmail.com, jma23@st-andrews.ac.uk
@@ -105,16 +105,18 @@ for ll = 1:size(data, 2)
     [betaMinNormBest(:, ll),residualNorm(:,ll),solutionNorm(:,ll)] = tikhonov(u, s, v, data(:, ll), lambda);
 end
 
+% regularise betas (contribution) across all ROIs & conditions
+areaActivity = betaMinNormBest / max(abs(betaMinNormBest(:)));
 
 % if multiple conditions, reshape betas to correspond to its input format
 if exist('sizeData','var') % input EEG data is cell
     range = cell2mat(arrayfun(@(x) sizeData{x}(2),1:length(sizeData),'uni',false));
     cumul = [0 cumsum(range)];
-    betaMinNormBest = arrayfun(@(x) betaMinNormBest(:,cumul(x)+1:cumul(x+1)),1:length(sizeData),'uni',false);
+    areaActivity = arrayfun(@(x) areaActivity(:,cumul(x)+1:cumul(x+1)),1:length(sizeData),'uni',false);
     residualNorm = arrayfun(@(x) residualNorm(:,cumul(x)+1:cumul(x+1)),1:length(sizeData),'uni',false);
     solutionNorm = arrayfun(@(x) solutionNorm(:,cumul(x)+1:cumul(x+1)),1:length(sizeData),'uni',false);
 elseif exist('nbCond','var') % input EEG data is 3D mat
-    betaMinNormBest = reshape(betaMinNormBest,[size(betaMinNormBest,1),size(betaMinNormBest,2)/nbCond,nbCond]);
+    areaActivity = reshape(areaActivity,[size(areaActivity,1),size(areaActivity,2)/nbCond,nbCond]);
     residualNorm = reshape(residualNorm,[size(residualNorm,2)/nbCond,nbCond]);
     solutionNorm = reshape(solutionNorm,[size(solutionNorm,2)/nbCond,nbCond]);
 end
