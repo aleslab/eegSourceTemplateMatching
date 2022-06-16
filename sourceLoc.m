@@ -1,7 +1,8 @@
 function [betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] = sourceLoc(template , data, plotLcurve)
-% Source localisation using lcurve regularisation
+% Fit EEG-templates (topographies of functional brain areas) to EEG-data
 % INPUTS:
-% template = templates for the current EEG montage (electrodes x ROI)
+% template = templates for the current EEG montage, either a 2D matrix 
+% (electrodes x ROI)or a structure as returned from createCustomTemplates 
 % data = average EEG data to fit. For single condition, 2D-matrix with 
 % electrodes x time. For multiple conditions, can use a 3-D matrix 
 % electrodes x time x condition if all conditions have the same sizes,
@@ -17,12 +18,20 @@ function [betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] 
 % residuals & solutions from the minimum-norm estimates 
 % USAGE: roiActivity = sourceLoc(template, data)
 
+addpath('subfunctions')
+
 if (nargin==2), plotLcurve =0; end % do not plot Lcurve
+
+% get weights from templates if struct
+if isstruct(template)
+    template = template.weights;
+end
 
 % check that template and data have the same number of electrodes
 % if not, return an error
 if size(template,1) ~= size(data,1)
-    error('Mismatch between the number of electrodes in the data and the template. Please check your template. Alternatively the data dimensions might be flipped (DIM1 = electrodes, DIM2 = timepoints)')
+    error(['Mismatch between the number of electrodes in the data and the template. Please check your template.'...
+        'Alternatively the data dimensions might be flipped (DIM1 = electrodes, DIM2 = timepoints)'])
 end
 
 % check if data needs to be reshaped to a 2D matrix
