@@ -1,24 +1,60 @@
-function [betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] = fitTemplates(template , data, plotLcurve, lambda)
-% Fit EEG-templates (topographies of functional brain areas) to EEG-data
-% INPUTS:
-% template = templates for the current EEG montage, either a 2D matrix 
-% (electrodes x ROI)or a structure as returned from createCustomTemplates 
-% data = average EEG data to fit. For single condition, 2D-matrix with 
-% electrodes x time. For multiple conditions, can use a 3-D matrix 
-% electrodes x time x condition if all conditions have the same sizes,
-% or use a cell array (one cell per condition)
-% Time can be replaced by sine & cosine amplitudes when analysing frequencies
-% optional plotLcurve: default 0, 1 for plotting L-curve
-% optional lambda: regularisation parameter. Will use this value instead of 
-% the one computed by the function (use this if the regularisation fails)
-% ATTENTION: Make sure that template & data have the same montage and the same reference   
-% use createCustomTemplates to fit your EEG montage if needed
-% OUTPUTS:
-% betaMinNormBest = activity in each ROI for the best regularisation value
-% other optional output: 
-% lambda = regularisation term, 
-% residuals & solutions from the minimum-norm estimates 
-% USAGE: roiActivity = fitTemplates(template, data)
+function [betaMinNormBest,lambda,residualNorm,solutionNorm,regularizedInverse] = fitTemplates(data, templates, plotLcurve, lambda)
+%fitTemplates fits EEG-templates (topographies of functional brain areas) to EEG-data
+%   A = fitTemplates(data, templates) returns a matrix A containing the
+%   contribution of functional brain regions to the EEG signal. 
+%   Its format corresponds to the input data (see below).
+%
+%   DATA is the average (across participants) EEG data. For a single
+%   condition, it should be a N-by-T matrix (electrodes x time). For 
+%   multiple conditions, it can be a N-by-T-by-C matrix (electrodes x time 
+%   x condition) if all conditions have the same size, or a cell array (one
+%   cell per condition, each cell in a N-by-T format).
+%   Time can be replaced by sine & cosine amplitudes when analysing 
+%   frequencies (SSVEP) instead of waveforms.
+%
+%   TEMPLATES can be a N-by-M matrix (electrodes x regions) or a structure. 
+%   The number of electrodes and the reference of the montage should match
+%   between the DATA and the TEMPLATES. See the README file and help for
+%   createCustomTemplates.
+%
+%   OPTIONAL INPUT (has to be entered in the following order, use [] to skip one)
+%   Useful when the regularisation fails. For more info see README file
+%   regionActivity = fitTemplates(myEEGdata, mytemplates [, plotLcurve] [, lambda])
+%       'plotLcurve'    - default 0, 1 for plotting L-curve.
+%       'lambda'        - regularisation parameter. Will use this value 
+%                         instead of the one computed by the function. 
+%
+%   OPTIONAL OUTPUT
+%   [betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] = fitTemplates(data, templates)
+%       'lambda'                - regularisation parameter used in the function. 
+%       'residualNorm'          - residuals of the minimum-norm estimates 
+%       'solutionNorm'          - solutions of the minimum-norm estimates 
+%       'regularizedInverse'    - inverse matrix
+%
+%   USAGE: 
+%       % Returns the contribution of each functional brain regions to myEEGdata
+%       regionActivity = fitTemplates(myEEGdata, mytemplates)
+%       % Returns the contribution of each functional brain 
+%       regions to myEEGdata using a pre-computed regularisation parameter
+%       regionActivity = fitTemplates(myEEGdata, mytemplates, [], 6000)
+
+% Copyright (C) 2022 Marlene Poncet & Justin Ales, University of St
+% Andrews, marlene.poncet@gmail.com, jma23@st-andrews.ac.uk
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program; if not, write to the Free Software
+% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
 
 addpath('subfunctions')
 
@@ -27,8 +63,8 @@ if (nargin==3), lambda = []; end % plot Lcurve & compute best lambda
 
 
 % get weights from templates if struct
-if isstruct(template)
-    template = template.weights;
+if isstruct(templates)
+    templates = templates.weights;
 end
 
 
@@ -41,14 +77,14 @@ elseif length(size(data)) == 3
     data=reshape(data,[size(data,1),size(data,2)*nbCond]);
 end
 
-% check that template and data have the same number of electrodes
+% check that templates and data have the same number of electrodes
 % if not, return an error
-if size(template,1) ~= size(data,1)
-    error(['Mismatch between the number of electrodes in the data and the template. Please check your template.'...
+if size(templates,1) ~= size(data,1)
+    error(['Mismatch between the number of electrodes in the data and the templates. Please check your templates.'...
         'Alternatively the data dimensions might be flipped (DIM1 = electrodes, DIM2 = timepoints)'])
 end
 
-[u,s,v] = csvd(template);
+[u,s,v] = csvd(templates);
 
 % use l-curve to find the best regularisation
 if isempty(lambda)
@@ -56,15 +92,15 @@ if isempty(lambda)
     
     if lambda > lambdaGridMinNorm(4) || lambda < lambdaGridMinNorm(end-3)
         warning(['Risk of overfitting. You might want to test another (higher) regularisation value.' ...
-            'Try plotting L-curve to determine the corner of the curve using fitTemplates( template , data, 1)'...
-            'Then use that corner value in fitTemplates( template , data, 0, ''cornerValue'')'])
+            'Try plotting L-curve to determine the corner of the curve using fitTemplates( templates , data, 1)'...
+            'Then use that corner value in fitTemplates( templates , data, 0, ''cornerValue'')'])
     end
 end
     
 % compute results for the best regularisation
 residualNorm = zeros(1,size(data,2));
 solutionNorm = zeros(1,size(data,2));
-betaMinNormBest = zeros([size(template,2) size(data, 2)]);
+betaMinNormBest = zeros([size(templates,2) size(data, 2)]);
 for ll = 1:size(data, 2)
     [betaMinNormBest(:, ll),residualNorm(:,ll),solutionNorm(:,ll)] = tikhonov(u, s, v, data(:, ll), lambda);
 end

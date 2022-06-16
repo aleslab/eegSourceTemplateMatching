@@ -1,81 +1,75 @@
 function customTemplates = createCustomTemplates(channelInfo,varargin)
-% function creating EEG topographic templates according to the EEG montage  
-% with which the dataset was recorded
-% Plot the topographies of the customTemplates for each ROI to check that
-% they are similar to what is in the paper. Done automatically for EEGlab
-% data. If it does not seem right, check the coordinate system of
-% your data (see further help in the function)
-% example EEGlab: customTemplates = createCustomTemplates(EEG.chanlocs)
-% example Fieldtrip: customTemplates = createCustomTemplates(cfg.elec)
+%createCustomTemplates creates EEG templates according to user's montage.  
+%   CUSTOMTEMPLATES = createCustomTemplates(channelInfo) returns
+%   topographic EEG templates for 18 functional brain regions according to
+%   the channel locations defined in channelInfo. 
+%   CUSTOMTEMPLATES is a structure defined with the following fields:
+%   	'weights'               - Scalp response. N-by-M matrix with N electrodes and 
+%                                 M brain regions (18). 
+%       'listROIs'              - Names of the 18 brain regions (for L: left and R: right 
+%                                 separately).  
+%   	'label'                 - Cell-array of length N with the electrode label from
+%                                 the dataset
+%       'reference'             - Reference used to create the templates (0=average; otherwise channel number)
+%       'matchedLabel'          - Best matching labels from the 10-05 system
+%   	'matchedDistances'      - Euclidean distances (in mm) between electrodes
+%                                 comparing user & standard EEG montage  
+%   	'electrodesIncludedIndex'	- Index of electrodes included in the custom templates
+%       'electrodesExcludedIndex'   - Index of electrodes excluded from
+%                                     the user's montage (due to missing location information 
+%                                     or no satisfactory matching)
+%       'electrodesExcludedLabels'	- Labels of excluded electrodes  
+%   It is recommended to plot the topographies (1 per brain region) returned from createCustomTemplates (done 
+%   automatically for EEGLAB data). If it does not seem right, check the 
+%   coordinate system of your data.
 %
-% input channelInfo: variable containing electrode definition
-% For EEGlab users = EEG.chanlocs (obtained from readlocs or using the GUI)
-% For better results use the MNI channel location file for electrode 
-% position (default since EEGlab 2021)
-% https://eeglab.org/tutorials/04_Import/Channel_Locations.html 
-% For Fieldtrip users, structure (usually cfg.elec obtained from 
-% ft_read_sens) containing
-%   elec.elecpos = Nx3 matrix with carthesian (x,y,z) coordinates of each
-%                  electrode
-%   elec.label   = cell-array of length N with the label of each electrode
-%   elec.chanpos = Nx3 matrix with coordinates of each sensor
+%   CHANNELINFO should contain 3-D cartesian (x,y,z) coordinates of the electrodes 
+%   corresponding to the user's EEG montage. If CHANNELINFO does not contain 
+%   at least 8 channel labels that match with a standard 10-20 montage, the
+%   user is asked to manually enter a set of matching electrodes. 
+%   For EEGLAB users CHANNELINFO is EEG.chanlocs, obtained from readlocs.m or 
+%   when adding channel locations from the GUI. For better results use the 
+%   MNI channel location file (default since EEGLAB 2021)
+%   For Fieldtrip users, CHANNELINFO is cfg.elec obtained from ft_read_sens 
+%   which should contain at least elec.label and elec.chanpos
 %
-% output is a structure containing:
-%   customTemplates.weights = matrix of EEG response for N electrodes x 18 ROI-templates 
-%   customTemplates.listROIs = cell-array of the 18 ROI names (for L-left and R-right separately)
-%   customTemplates.chanLabels = cell-array of length N with the label of
-%   each electrode (same as the dataset)
-%   customTemplates.reference = reference used for the templates (0=average)
-%   customTemplates.matchedLabels = best matching labels from the templates
-%   customTemplates.matchedDistances = euclidean distances (in mm) between
-%   electrodes comparing user & standard EEG montage  
-%   customTemplates.electrodesIncludedIndex = electrodes' indexes
-%   corresponding to the chanLabels included in the custom templates
-%   customTemplates.electrodesExcludedIndex = indexes of excluded
-%   electrodes from the user's montage (due to missing location information 
-%   or no satisfactory matching)
-%   customTemplates.electrodesExcludedLabels = labels of excluded
-%   electrodes
-% Optional input (has to be in the following order, [] to skip one):
-% 1st: Reference of the EEG montage. Default is read from channelInfo for 
-% EEGlab. If not found, ask user or can be entered here. The reference 
-% should be the channel number or 0 for average reference. 
-% usage: customTemplates = createCustomTemplates(EEG.chanlocs,0)
-% 2nd: plot the templates 1 (default) or not 0. Plotting only works for 
-% EEG.chanlocs input
-% 3rd: Coordinate system: 'ALS' or 'RAS'. By default the coordinate system  
-% is ALS for EEGlab users, RAS otherwise but can be specified by the user. 
-% (see below for more details. Other coordinate system can potentially be 
-% added in the program) 
-% usage: customTemplates = createCustomTemplates(EEG.chanlocs,[],[],'RAS')
-% 4th: interpolation = default 0, set to 1 to use interpolation method
-% instead of closest electrode to fit the montage
-%
-% To do the fitting, need 3-D cartesian coordinates of the electrodes
-% corresponding to the EEG montage that is used AND at least 8 channel 
-% labels to match. These can be extracted from the dataset or entered 
-% manually when prompted if no label is found.
-% Also need the reference of the montage
-%
-% The ROI templates were created based on 3D electrode coordinates from the 
-% fieldtrip standard_1005.elc file constructed by Robert Oostenveld.
-% The file can be read with ft_read_sens. 
-% The electrode positions are represented in mm in the MNI coordinate 
-% system: RAS for first dimension orients towards Right, the 
-% second dimension orients towards Anterior, the third dimension orients 
-% towards Superior. 
-% see also: https://www.fieldtriptoolbox.org/template/electrode/
-% for coordinate system: https://www.fieldtriptoolbox.org/faq/coordsys/
-% EEGlab uses a different coordinate system: ALS. x is towards the nose, 
-% y is towards the left ear, and z towards the vertex. So before finding 
-% the best alignment between the dataset and templates, the coordinates 
-% need to be flipped accordingly. 
+%   OPTIONAL INPUT (has to be entered in the following order, use [] to skip one)
+%   customTemplates = createCustomTemplates(channelInfo [, reference] [, plot] [, coordsys] [, interpol]) 
+%       'reference' - Reference of the EEG montage. If not specified, user 
+%                     is prompted to enter it. It should be a channel index (number) 
+%                     or 0 for average reference.
+%       'plot'      - 1 or 0; 1 plots the templates. Default is 1 for
+%                     EEGLAB. This option does not work for fieldtrip
+%       'coordsys'  - Coordinate system of the electrode locations: 'ALS' or 'RAS'. 
+%                     By default the coordinate system is ALS for EEGLAB 
+%                     users, RAS otherwise. Other coordinate system can 
+%                     potentially be added in future release.   
+%       'interpol'  - default 0, set to 1 to use interpolation method 
+%                     instead of closest electrode to fit the montage
+%   
+%   USAGE: 
+%       % Create custom EEG templates from data analysed with EEGLAB
+%       mytemplates = createCustomTemplates(EEG.chanlocs)
+%       % Create custom EEG templates from data analysed with fieldtrip and use an interpolation method to fit the montages
+%       mytemplates = createCustomTemplates(cfg.elec,[],[],[],1)
 
-% template assumed to be in the same directory, if it cannot be found, user 
-% is prompted to pick the directory manually
+% Copyright (C) 2022 Marlene Poncet & Justin Ales, University of St
+% Andrews, marlene.poncet@gmail.com, jma23@st-andrews.ac.uk
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program; if not, write to the Free Software
+% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-% could potentially use alignFiducials.m to align the coordinates
-% automatically
 
 addpath('subfunctions')
 
@@ -173,6 +167,8 @@ while length(refIndex)~=1 || ~ismember(refIndex,0:length(chanLabelsData)) % incl
 end
     
 % load standard 10-05 templates 
+% File assumed to be in the same directory, if it cannot be found, user 
+% is prompted to pick the directory manually
 templateFile = ['templates' filesep 'template_Standard_1005.mat'];
 templateDir = 1;
 while ~exist(templateFile,'file') && templateDir~=0
@@ -186,9 +182,19 @@ load(templateFile)
 matchIndexROI = cell2mat(arrayfun(@(x) cellfind(templates1005.label,listLabelMatch{x}),1:length(listLabelMatch),'uni',false));
 
 
-
-% get electrodes coordinate to match to the templates
-% change orientation if necessary
+% The templates were created based on 3D electrode coordinates from the 
+% fieldtrip standard_1005.elc file constructed by Robert Oostenveld.
+% The file can be read with ft_read_sens. 
+% The electrode positions are represented in mm in the MNI coordinate 
+% system: RAS for first dimension orients towards Right, the 
+% second dimension orients towards Anterior, the third dimension orients 
+% towards Superior. 
+% see also: https://www.fieldtriptoolbox.org/template/electrode/
+% and: https://www.fieldtriptoolbox.org/faq/coordsys/
+% EEGLAB uses a different coordinate system: ALS. x is towards the nose, 
+% y is towards the left ear, and z towards the vertex. 
+% So before finding the best alignment between the dataset and templates, 
+% the coordinates need to be flipped accordingly.
 if eeglabUser
     if strcmp(coordsys,'ALS')
         coordToMatch = [-[channelInfo.Y]; [channelInfo.X]; [channelInfo.Z]]';
