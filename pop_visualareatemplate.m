@@ -101,21 +101,23 @@ end
 %Put some checks in here-
 
 
+betaMinNormBest = fitEEGTemplates(EEG.data(:,:), template);
+
+
 
 
 templateInfo = load(templateFilename)
 
 [STUDY, erpdata, times, setinds, cinds] = std_readdata(STUDY, ALLEEG, 'channels', { ALLEEG(1).chanlocs(:).labels });
 
+templateFitData = fitEEGTemplates(erpdata, templateInfo.weights);
+
+ 
 figure()
-for iCond = 1:length(erpdata(:))
+for iCond = 1:length(templateFitData(:))
 
-    data=squeeze(mean(erpdata{iCond}(:,templateInfo.electrodesIncludedIndex,:),3))';
-
-    [betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] = ...
-        sourceLoc(templateInfo.data, data);
-
-    numRois=size(templateInfo.data,2)
+    numRois=size(templateInfo.weights,2)
+    
     for iRoi=1:numRois
         subplot(numRois/2,2,iRoi)
         hold on;

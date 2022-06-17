@@ -1,104 +1,111 @@
 function customTemplates = createCustomTemplates(channelInfo,varargin)
-% function creating ROI templates corresponding to the EEG montage with 
-% which the dataset was recorded
-% Plot the topographies of the customTemplates for each ROI to check that
-% they are similar to what is in the paper. Done automatically for EEGlab
-% input data. If it does not seem right, check the coordinate system of
-% your data (see below for details)
-% usage EEGlab: customTemplates = createCustomTemplates(EEG.chanlocs)
-% usage Fieldtrip: customTemplates = createCustomTemplates(cfg.elec)
+%createCustomTemplates creates EEG templates according to user's montage.  
+%   CUSTOMTEMPLATES = createCustomTemplates(channelInfo) returns
+%   topographic EEG templates for 18 functional brain regions according to
+%   the channel locations defined in channelInfo. 
+%   CUSTOMTEMPLATES is a structure defined with the following fields:
+%   	'weights'               - Scalp response. N-by-M matrix with N electrodes and 
+%                                 M brain regions (18). 
+%       'listROIs'              - Names of the 18 brain regions (for L: left and R: right 
+%                                 separately).  
+%   	'label'                 - Cell-array of length N with the electrode label from
+%                                 the dataset
+%       'reference'             - Reference used to create the templates (0=average; otherwise channel number)
+%       'matchedLabel'          - Best matching labels from the 10-05 system
+%   	'matchedDistances'      - Euclidean distances (in mm) between electrodes
+%                                 comparing user & standard EEG montage  
+%   	'electrodesIncludedIndex'	- Index of electrodes included in the custom templates
+%       'electrodesExcludedIndex'   - Index of electrodes excluded from
+%                                     the user's montage (due to missing location information 
+%                                     or no satisfactory matching)
+%       'electrodesExcludedLabels'	- Labels of excluded electrodes  
+%   It is recommended to plot the topographies (1 per brain region) returned from createCustomTemplates (done 
+%   automatically for EEGLAB data). If it does not seem right, check the 
+%   coordinate system of your data.
 %
-% input channelInfo: variable containing electrode definition
-% For EEGlab users = EEG.chanlocs (obtained from readlocs or using the GUI)
-% For better results use the MNI channel location file for electrode 
-% position (default since EEGlab 2021)
-% https://eeglab.org/tutorials/04_Import/Channel_Locations.html 
-% For Fieldtrip users, structure (usually cfg.elec obtained from 
-% ft_read_sens) containing
-%   elec.elecpos = Nx3 matrix with carthesian (x,y,z) coordinates of each
-%                  electrode
-%   elec.label   = cell-array of length N with the label of each electrode
-%   elec.chanpos = Nx3 matrix with coordinates of each sensor
+%   CHANNELINFO should contain 3-D cartesian (x,y,z) coordinates of the electrodes 
+%   corresponding to the user's EEG montage. If CHANNELINFO does not contain 
+%   at least 8 channel labels that match with a standard 10-20 montage, the
+%   user is asked to manually enter a set of matching electrodes. 
+%   For EEGLAB users CHANNELINFO is EEG.chanlocs, obtained from readlocs.m or 
+%   when adding channel locations from the GUI. For better results use the 
+%   MNI channel location file (default since EEGLAB 2021)
+%   For Fieldtrip users, CHANNELINFO is cfg.elec obtained from ft_read_sens 
+%   which should contain at least elec.label and elec.chanpos
 %
-% output is a structure containing:
-%   customTemplates.data = matrix of EEG response for N electrodes x 18 ROI-templates 
-%   customTemplates.ROInames = cell-array of the 18 ROI names (for L-left and R-right separately)
-%   customTemplates.chanLabels = cell-array of length N with the label of
-%   each electrode (same as the dataset)
-%   customTemplates.ref = reference used for the templates (0=average)
-%   customTemplates.matchedLabels = best matching labels from the templates
-%
-% Optional input (has to be in the following order, [] to skip one):
-% 1st: Reference of the EEG montage. Default is read from channelInfo for 
-% EEGlab. If not found, ask user or can be entered here. The reference 
-% should be the channel number or 0 for average reference. 
-% usage: customTemplates = createCustomTemplates(EEG.chanlocs,0)
-% 2nd: plot the templates 1 (default) or not 0. Only works for EEG.chanlocs 
-% input
-% 3rd: Coordinate system: 'ALS' or 'RAS'. By default the coordinate system  
-% is ALS for EEGlab users, RAS otherwise but can be specified by the user. 
-% (see below for more details. Other coordinate system can potentially be 
-% added in the program) 
-% usage: customTemplates = createCustomTemplates(EEG.chanlocs,[],[],'RAS')
-%
-% To do the fitting, need 3-D cartesian coordinates of the electrodes
-% corresponding to the EEG montage that is used AND at least 8 channel 
-% labels to match. These can be extracted from the dataset or entered 
-% manually when prompted if no label is found.
-% Also need the reference of the montage
-%
-% The ROI templates were created based on 3D electrode coordinates from the 
-% fieldtrip standard_1005.elc file constructed by Robert Oostenveld.
-% The file can be read with ft_read_sens. 
-% The electrode positions are represented in mm in the MNI coordinate 
-% system: RAS for first dimension orients towards Right, the 
-% second dimension orients towards Anterior, the third dimension orients 
-% towards Superior. 
-% see also: https://www.fieldtriptoolbox.org/template/electrode/
-% for coordinate system: https://www.fieldtriptoolbox.org/faq/coordsys/
-% EEGlab uses a different coordinate system: ALS. x is towards the nose, 
-% y is towards the left ear, and z towards the vertex. So before finding 
-% the best alignment between the dataset and templates, the coordinates 
-% need to be flipped accordingly. 
+%   OPTIONAL INPUT (has to be entered in the following order, use [] to skip one)
+%   customTemplates = createCustomTemplates(channelInfo [, reference] [, plot] [, coordsys] [, interpol]) 
+%       'reference' - Reference of the EEG montage. If not specified, user 
+%                     is prompted to enter it. It should be a channel index (number) 
+%                     or 0 for average reference.
+%       'plot'      - 1 or 0; 1 plots the templates. Default is 1 for
+%                     EEGLAB. This option does not work for fieldtrip
+%       'coordsys'  - Coordinate system of the electrode locations: 'ALS' or 'RAS'. 
+%                     By default the coordinate system is ALS for EEGLAB 
+%                     users, RAS otherwise. Other coordinate system can 
+%                     potentially be added in future release.   
+%       'interpol'  - default 0, set to 1 to use interpolation method 
+%                     instead of closest electrode to fit the montage
+%   
+%   USAGE: 
+%       % Create custom EEG templates from data analysed with EEGLAB
+%       mytemplates = createCustomTemplates(EEG.chanlocs)
+%       % Create custom EEG templates from data analysed with fieldtrip and use an interpolation method to fit the montages
+%       mytemplates = createCustomTemplates(cfg.elec,[],[],[],1)
 
-% template assumed to be in the same directory, if it cannot be found, user 
-% is prompted to pick the directory manually
+% Copyright (C) 2022 Marlene Poncet & Justin Ales, University of St
+% Andrews, marlene.poncet@gmail.com, jma23@st-andrews.ac.uk
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program; if not, write to the Free Software
+% Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-% could potentially use alignFiducials.m to align the coordinates
-% automatically
+
+addpath('subfunctions')
+
+% 4 maximum optional inputs
+if length(varargin)>4
+    error('Maximum 4 optional inputs')
+end
 
 if length(channelInfo) == 1 % not eeglab
     eeglabUser = 0; coordsys = 'RAS';chanLabelsData = channelInfo.label;
-    plotMap = 0;refIndex=[];
     % Check if any electrodes with empty locations
     % Don't think chanpos can ever be empty with fieldtrip struct...
     tf = arrayfun(@(k) ~isempty(channelInfo.chanpos(k)), 1:length(channelInfo.chanpos));
     elecExcludedIndex = find(~tf); elecIncludedIndex = find(tf);
 else
     eeglabUser = 1; coordsys = 'ALS';chanLabelsData = {channelInfo.labels};
-    plotMap = 1;
-    if isempty(channelInfo(1).ref)
-        refIndex = [];
-    elseif strcmp(channelInfo(1).ref,'average')
-        refIndex = 0;
-    else
-        refIndex = channelInfo(1).ref;
-    end
     % Check if any electrodes with empty locations
     tf = arrayfun(@(k) ~isempty(channelInfo(k).X), 1:numel(channelInfo));
     elecExcludedIndex = find(~tf); elecIncludedIndex = find(tf);
 end
-if ~isempty(varargin) 
-    refIndex = varargin{1}; % use reference entered by user
-    if length(varargin) == 2
-        plotMap = varargin{2};
-    end
-    if length(varargin) == 3
-        coordsys = varargin{3}; % use coordinate system entered by user
-    end
+if ~isempty(elecExcludedIndex)
+    disp('%d electrodes do not have location data',sum(~tf))
 end
+
+% deal with optional inputs
+% first set defaults
+optargs = {[],1,coordsys,0};
+% find empty user inputs
+indexOpt = cellfun(@(x) ~isempty(x), varargin);
+% overwrite defaults skipping empty ones
+optargs(indexOpt) = varargin(indexOpt);
+% put in usable variables
+[refIndex, plotMap, coordsys, interpolation] = optargs{:};
 fprintf('Assumes %s coordinate system.\n',coordsys)
 
+    
 % try to match electrodes between dataset and template using standard 10-20: Fp1 Fp2 Fz F7 F3 C3 T7 P3 
 % P7 Pz O1 Oz O2 P4 P8 T8 C4 F4 F8 Cz
 listLabels = {'Fp1' 'Fp2' 'Fz' 'F7' 'F3' 'C3' 'T7' 'P3' 'P7' 'Pz' 'O1' 'Oz' ...
@@ -159,7 +166,9 @@ while length(refIndex)~=1 || ~ismember(refIndex,0:length(chanLabelsData)) % incl
     refIndex = str2num(answer{1});
 end
     
-% load templates (including elecDef)
+% load standard 10-05 templates 
+% File assumed to be in the same directory, if it cannot be found, user 
+% is prompted to pick the directory manually
 templateFile = ['templates' filesep 'template_Standard_1005.mat'];
 templateDir = 1;
 while ~exist(templateFile,'file') && templateDir~=0
@@ -170,47 +179,45 @@ end
 load(templateFile)
 
 % get the indexes that match with the data (& from the list of channels)
-matchIndexROI = cell2mat(arrayfun(@(x) cellfind(elecDef.label,listLabelMatch{x}),1:length(listLabelMatch),'uni',false));
+matchIndexROI = cell2mat(arrayfun(@(x) cellfind(templates1005.label,listLabelMatch{x}),1:length(listLabelMatch),'uni',false));
 
 
-
-% get electrodes coordinate to match to the templates
-% change orientation if necessary
+% The templates were created based on 3D electrode coordinates from the 
+% fieldtrip standard_1005.elc file constructed by Robert Oostenveld.
+% The file can be read with ft_read_sens. 
+% The electrode positions are represented in mm in the MNI coordinate 
+% system: RAS for first dimension orients towards Right, the 
+% second dimension orients towards Anterior, the third dimension orients 
+% towards Superior. 
+% see also: https://www.fieldtriptoolbox.org/template/electrode/
+% and: https://www.fieldtriptoolbox.org/faq/coordsys/
+% EEGLAB uses a different coordinate system: ALS. x is towards the nose, 
+% y is towards the left ear, and z towards the vertex. 
+% So before finding the best alignment between the dataset and templates, 
+% the coordinates need to be flipped accordingly.
 if eeglabUser
     if strcmp(coordsys,'ALS')
         coordToMatch = [-[channelInfo.Y]; [channelInfo.X]; [channelInfo.Z]]';
     else % RAS
         coordToMatch = [[channelInfo.X]; [channelInfo.Y]; [channelInfo.Z]]';
     end
-    
 else % fieldtrip
     if strcmp(coordsys,'ALS')
         coordToMatch = [-channelInfo.chanpos(:,2) channelInfo.chanpos(:,1) channelInfo.chanpos(:,3)];
     else % RAS
         coordToMatch = channelInfo.chanpos;
     end
-
-    % Discard any electrodes with empty locations
-    tf = arrayfun(@(k) ~isempty(channelInfo(k).chanpos), 1:numel(channelInfo));
-
 end
 
-electrodesIncludedLabels = {channelInfo(tf).labels};
-
-if any(~tf) %If any channels are empty
-    removedChans = strjoin({channelInfo(~tf).labels});    
-    warning('%d electrodes do not have location data, removing %s from template',sum(~tf),removedChans)    
-    channelInfo = channelInfo(tf);
-end
 
 
 % align the montages using the matching electrodes
 % Add dimension for "homogeneous coordinates"  for affine fitting.
 coordToMatch(:,4) = 1; 
-elecDef.chanpos(:,4) = 1; 
+templates1005.chanpos(:,4) = 1; 
 % Affine:   templateLoc = customLoc * AffineMtx
 % affineMtx = templateLoc/customLoc
-affineMtx = elecDef.chanpos(matchIndexROI,:)' / coordToMatch(matchIndex,:)' ;
+affineMtx = templates1005.chanpos(matchIndexROI,:)' / coordToMatch(matchIndex,:)' ;
 % Apply transform to all the electrodes of the montage
 elecTrans = (affineMtx*coordToMatch')';
 
@@ -219,7 +226,7 @@ elecTrans = (affineMtx*coordToMatch')';
 % check that the new selected electrodes are close to the ones from the template
 cmap = hsv(length(matchIndex)); 
 figure;scatter3(elecTrans(matchIndex,1),elecTrans(matchIndex,2),elecTrans(matchIndex,3),[],cmap,'filled')
-hold on;scatter3(elecDef.chanpos(matchIndexROI,1),elecDef.chanpos(matchIndexROI,2),elecDef.chanpos(matchIndexROI,3),[],cmap)
+hold on;scatter3(templates1005.chanpos(matchIndexROI,1),templates1005.chanpos(matchIndexROI,2),templates1005.chanpos(matchIndexROI,3),[],cmap)
 for nn=1:length(matchIndex)
     text(elecTrans(matchIndex(nn),1),elecTrans(matchIndex(nn),2),elecTrans(matchIndex(nn),3),listLabelMatch{nn})
 end
@@ -230,13 +237,14 @@ title('Checking alignment')
 % Use knnsearch to find the best match between electrodes of the current 
 % montage and the template
 % returns electrode indexes (same length as nb of chan) & distances
-[bestElec, euclideanDist] = knnsearch(elecDef.chanpos(:,1:3),elecTrans(:,1:3));
+[bestElec, euclideanDist] = knnsearch(templates1005.chanpos(:,1:3),elecTrans(:,1:3));
 
 % detect electrodes that are very far from any existing electrodes in the
 % template. These are probably not in the template so should be removed
 % from the data (which would be the case for electrodes on the face or
 % below the Nz/T9/Iz/T10 line as in EGI montage).
 badMatchingElec = find(euclideanDist>=30); % in mm
+keepElec = setdiff(1:length(bestElec),badMatchingElec);
 if badMatchingElec>0
     disp(['Could not find satisfactory match for electrode(s): ' num2str(elecIncludedIndex(badMatchingElec))])
     disp('One reason could be that these electrodes are not present in the 10-05 standard system.')
@@ -244,31 +252,36 @@ if badMatchingElec>0
     elecIncludedIndex = setdiff(elecIncludedIndex, elecIncludedIndex(badMatchingElec));
 end
 
-% create new custom template using the best matching electrodes
-% BUT without the bad matching electrodes
-keepElec = setdiff(1:length(bestElec),badMatchingElec);
-matchedTemplate = avMap(bestElec(keepElec),:); 
+% create new custom template
+if ~interpolation
+    % create new custom template using the closest electrodes
+    % BUT without the bad matching electrodes
+    matchedTemplate = templates1005.weights(bestElec(keepElec),:);
+else
+    % interpolate the electrodes (exponential weighted)
+    % interpolation is done including far off electrodes which are exluded 
+    % only at the end. 
+    % pairwise distance between each electrode locations of the current
+    % montage and the template
+    distances = pdist2(templates1005.chanpos(:,1:3),elecTrans(:,1:3),  'squaredeuclidean');
+    % weight distances exponentially
+    weightedDist = exp(-distances/(20^2));
+    % normalize
+    normDist = weightedDist ./ repmat(sum(weightedDist),length(weightedDist),1);
+    % apply interpolation
+    interpMap = (templates1005.weights' * normDist)';
+    % exclude far off electrode(s)
+    matchedTemplate = interpMap(keepElec,:);
+end
 
-figure; scatter3(elecDef.chanpos(bestElec,1),elecDef.chanpos(bestElec,2),elecDef.chanpos(bestElec,3),'filled')
+figure; scatter3(templates1005.chanpos(bestElec,1),templates1005.chanpos(bestElec,2),templates1005.chanpos(bestElec,3),'filled')
 hold on; scatter3(elecTrans(keepElec,1),elecTrans(keepElec,2),elecTrans(keepElec,3))
 title('Best matching electrodes')
 
 
-%%%% This part (interpolation) has not been modified to deal with electrodes 
-%%%% with no location or for very far appart electrodes
-%%%%%% interpolate the electrodes (exponential weighted)
-% pairwise distance between each electrode locations of the current 
-% montage and the template   
-distances = pdist2(elecDef.chanpos(:,1:3),elecTrans(:,1:3),  'squaredeuclidean');
-% weight distances exponentially
-weightedDist = exp(-distances/(20^2));
-% normalize
-normDist = weightedDist ./ repmat(sum(weightedDist),length(weightedDist),1);
-% apply interpolation
-interpTemplate = (avMap' * normDist)'; 
-
 if ~isempty(elecExcludedIndex)
-    warning('Some electrodes have NOT be included in the templates and will need to be removed from your data before running templateFit (list in electrodesExcludedIndex electrodesExcludedLabels)')
+    warning(['Some electrodes have NOT be included in the templates and will need to be removed from your data '...
+    'before running templateFit (the list is in electrodesExcludedIndex and electrodesExcludedLabels)'])
 end
 
 
@@ -276,29 +289,26 @@ end
 if refIndex == 0
     % average reference: substract average across channels
     rerefTemplates = bsxfun(@minus,matchedTemplate, mean(matchedTemplate)); 
-    rerefTemplatesInterp = bsxfun(@minus,interpTemplate, mean(interpTemplate)); 
 else
     % substract the reference channel
     rerefTemplates = bsxfun(@minus,matchedTemplate, matchedTemplate(refIndex,:)); 
-    rerefTemplatesInterp = bsxfun(@minus,interpTemplate, interpTemplate(refIndex,:)); 
 end
 
 
 % output structure
-customTemplates.data = rerefTemplates;
-customTemplates.dataInterp = rerefTemplatesInterp;
-customTemplates.chanLabels = chanLabelsData(elecIncludedIndex)';
-customTemplates.ROInames = listROIs';
-customTemplates.ref = refIndex;
-customTemplates.matchedLabels = chanLabels(bestElec(keepElec));
-customTemplates.matchDistances = euclideanDist; % in mm
-customTemplates.electrodesIncludedIndex = elecIncludedIndex; 
-customTemplates.electrodesExcludedIndex = elecExcludedIndex;
-customTemplates.electrodesExcludedLabels = chanLabelsData(elecExcludedIndex)';
+customTemplates.weights = rerefTemplates;
+customTemplates.label = chanLabelsData(elecIncludedIndex)';
+customTemplates.listROIs = templates1005.listROIs;
+customTemplates.reference = refIndex;
+customTemplates.matchedLabel = templates1005.label(bestElec(keepElec));
+customTemplates.matchedDistance = euclideanDist; % in mm
+customTemplates.electrodesIncludedIndex = elecIncludedIndex'; 
+customTemplates.electrodesExcludedIndex = elecExcludedIndex';
+customTemplates.electrodesExcludedLabel = chanLabelsData(elecExcludedIndex)';
 
 
 figure()
-hist(customTemplates.matchDistances)
+hist(customTemplates.matchedDistance)
 xlabel('Distance in mm')
 ylabel('Number of Electrods')
 title('Distance to HighRes template electrode')
