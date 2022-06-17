@@ -319,7 +319,7 @@ if eeglabUser && plotMap == 1
     loc = [1:9;10:18]; loc = loc(:);
     mm = round(max(max(abs(customTemplates.weights))),-1);
     figure('position', [200, 200, 1000, 200])
-    for roi=1:18
+    for roi=1:length(templates1005.listROIs)
         subplot(2,9,loc(roi))
         topoplot(customTemplates.weights(:,roi),channelInfo,'colormap','jet');
         caxis([-mm mm]);
