@@ -71,10 +71,10 @@ function customTemplates = createCustomTemplates(channelInfo,varargin)
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-addpath('subfunctions')
+% addpath('subfunctions')
 
 % 4 maximum optional inputs
-if length(varargin)>4
+if nargin>4
     error('Maximum 4 optional inputs')
 end
 
@@ -317,13 +317,13 @@ title('Distance to HighRes template electrode')
 % plot optional topographies 
 if eeglabUser && plotMap == 1
     loc = [1:9;10:18]; loc = loc(:);
-    mm = round(max(max(abs(customTemplates.data))),-1);
+    mm = round(max(max(abs(customTemplates.weights))),-1);
     figure('position', [200, 200, 1000, 200])
     for roi=1:18
         subplot(2,9,loc(roi))
-        topoplot(customTemplates.data(:,roi),channelInfo,'colormap','jet');
+        topoplot(customTemplates.weights(:,roi),channelInfo,'colormap','jet');
         caxis([-mm mm]);
-        title(listROIs(roi));
+        title(customTemplates.listROIs(roi));
         axis equal
     end
 end  

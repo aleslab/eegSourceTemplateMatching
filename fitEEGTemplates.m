@@ -55,8 +55,8 @@ function [areaActivity,lambda,residualNorm,solutionNorm,regularizedInverse] = fi
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-
-addpath('subfunctions')
+% 
+% addpath('subfunctions')
 
 if (nargin==2), plotLcurve =0; lambda = []; end % do not plot Lcurve & compute best lambda
 if (nargin==3), lambda = []; end % plot Lcurve & compute best lambda
