@@ -47,34 +47,35 @@ if ~ischar(varargin{1}) %initial settings
     STUDY  = varargin{1};
     ALLEEG = varargin{2};
     comps = false;
-    if nargin > 2
-        if strcmpi(varargin{3}, 'components')
-            comps = true;
-        end
-    end
+    
     
     if isempty(ALLEEG)
         error('STUDY contains no datasets');
     end
-% if isempty(EEG.data)
-%     error('Cannot fit empty dataset.');
-% end
-
+end
 
 
 % GUI
 if nargin < 3
     
-  
-    
-    geometry = {[2 1]};
+  select_com = ['[inputname, inputpath] = uigetfile2(''*.mat;*.MAT'', ''Choose template file'');'...
+              'if inputname ~= 0,' ...
+              '   guiind = findobj(''parent'', gcbf, ''tag'', ''templateFile'' );' ...
+              '   set( guiind,''string'', [inputpath inputname]);' ...                  
+              'end; clear inputname inputpath;'];
+
+    geometry = {[3 1 1]};
     geomvert = [1];
 
-    uilist = {{ 'style' 'text' 'string' 'EEG Montage:' } ...
-               {'style', 'edit', 'string', 'test','tag','noiseWin'} ...
+    uilist = {{ 'style' 'text' 'string' 'Template file:' } ...
+               {'style', 'edit', 'string', '','tag','templateFile'} ...  
+               {'style' 'pushbutton' 'string' '...'   'tag' 'browse' 'Callback' select_com} ...
               };
 
+
+
     [result userdata err structOut] = inputgui('geometry', geometry, 'geomvert', geomvert, 'uilist', uilist, 'title', 'Fit Visual Area Templates to Data -- pop_visualareatemplate()', 'helpcom', 'pophelp(''pop_visualareatemplate'')');
+    templateFilename = structOut.templateFile
 
     if isempty(result), return; end   
 
@@ -83,9 +84,12 @@ else
     
     
 
-    if  nargin <3 || isempty(montageFile)
-        error('No montage specified ');
+    if  nargin <3 || isempty(varargin{3})
+        error('No template file specified ');
     end
+
+
+    templateFilename = varargin{3}
 end
 
 % Constants
@@ -96,30 +100,35 @@ end
 
 %Put some checks in here-
 
-[betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] = sourceLoc(template , EEG.data(:,:))
-
-% EEG.data(:,:) = filterWeights*EEG.data(:,:);
-% 
-% % In future try to return info about the filter using the ica fields.  
-% EEG.icaweights = template;
-% EEG.icasphere  = eye(size(template));
-% EEG.icawinv    = regularizedInverse;
-% EEG.icachansind =  1:EEG.nbchan;
-
-% EEG.icaact = EEG.icaact(windex,:,:);        
-        
 
 
 
+templateInfo = load(templateFilename)
 
-% fprintf('pop_optimalsubspacefilter() - performing %d point %s filtering.\n', filtorder + 1, filterTypeArray{revfilt + 1, length(edgeArray)})
-% fprintf('pop_optimalsubspacefilter() - transition band width: %.4g Hz\n', df)
-% fprintf('pop_optimalsubspacefilter() - passband edge(s): %s Hz\n', mat2str(edgeArray))
+[STUDY, erpdata, times, setinds, cinds] = std_readdata(STUDY, ALLEEG, 'channels', { ALLEEG(1).chanlocs(:).labels });
+
+figure()
+for iCond = 1:length(erpdata(:))
+
+    data=squeeze(mean(erpdata{iCond}(:,templateInfo.electrodesIncludedIndex,:),3))';
+
+    [betaMinNormBest, lambda,residualNorm,solutionNorm,regularizedInverse] = ...
+        sourceLoc(templateInfo.data, data);
+
+    numRois=size(templateInfo.data,2)
+    for iRoi=1:numRois
+        subplot(numRois/2,2,iRoi)
+        hold on;
+        plot(betaMinNormBest(iRoi,:)')
+        ylim( [min(betaMinNormBest(:)) max(betaMinNormBest(:)) ])
+        title(templateInfo.ROInames{iRoi})
+            
+    end
+end
 
 
-[STUDY, datavals, times, setinds, cinds] = std_readdata(STUDY, ALLEEG, 'channels', { ALLEEG(1).chanlocs(:).labels });
 
 % History string
-com = sprintf('%s = pop_optimalsubspacefilter(%s, %s);', inputname(1), inputname(1), vararg2str({method,noiseWin,sigWin,dimensionToFilter}));
+com = sprintf('[%s %s] = pop_visualareatemplate(%s,%s, %s);', inputname(1),inputname(2),inputname(1),inputname(2), vararg2str({structOut.templateFile}));
 
 end
