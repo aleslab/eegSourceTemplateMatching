@@ -307,11 +307,11 @@ customTemplates.electrodesExcludedIndex = elecExcludedIndex';
 customTemplates.electrodesExcludedLabel = chanLabelsData(elecExcludedIndex)';
 
 
-figure()
-hist(customTemplates.matchedDistance)
-xlabel('Distance in mm')
-ylabel('Number of Electrods')
-title('Distance to HighRes template electrode')
+% figure()
+% hist(customTemplates.matchedDistance)
+% xlabel('Distance in mm')
+% ylabel('Number of Electrods')
+% title('Distance to HighRes template electrode')
 
 
 % plot optional topographies 
