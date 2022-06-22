@@ -1,6 +1,9 @@
 # EEG Source Template Matching
-Determine the normalised contribution (from -1 to 1) of functional brain 
-sources to the EEG scalp  signal by fitting EEG templates (which represent 
+
+A toolbox for fitting ERP data to group average topographic templates created from functional areas mapped by fMRI and the topographies calculated using individually defined BEM forward models. 
+
+This toolbox can be used to determine the normalised contribution (from -1 to 1) of functional brain 
+sources to the EEG scalp  signal by fitting these topographic templates (which represent 
 the scalp activity of 18 visual areas) to the EEG data.
 
 This toolbox is designed to work with both EEGLAB and FieldTrip. For EEGLAB a "STUDY" design is required. This toolbox contains a rudimentary EEGLAB plugin that can be run from the GUI. However, for more control use it as a script (see ExampleScript_EEGLAB_study.m)
