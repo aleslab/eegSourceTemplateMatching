@@ -157,6 +157,13 @@ if isempty(refIndex)
     answer = inputdlg(prompt,dlgtitle);
     refIndex = str2num(answer{1});
 end
+
+
+% if EEGLAB 'average" label is input set to refIndex to 0; 
+if ischar(refIndex) && strmatch(lower(refIndex),'average')
+    refIndex = 0;
+end
+
 while length(refIndex)~=1 || ~ismember(refIndex,0:length(chanLabelsData)) % include 0 for average reference
     msgError = errordlg('Please enter a valid number for the EEG reference','Input error','modal');
     uiwait(msgError);
@@ -286,7 +293,7 @@ end
 
 
 % re-reference the templates
-if refIndex == 0
+if refIndex == 0 
     % average reference: substract average across channels
     rerefTemplates = bsxfun(@minus,matchedTemplate, mean(matchedTemplate)); 
 else

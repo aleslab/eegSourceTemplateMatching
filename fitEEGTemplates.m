@@ -71,7 +71,11 @@ end
 % check if data needs to be reshaped to a 2D matrix
 if iscell(data)
     sizeData = cellfun(@size,data,'uni',false);
-    data = cell2mat(data);
+    
+    %Note tricky use of (:)'.  This is to ensure cell arrays of 
+    % [n 1] or [1 n] both concatenate the 2nd dimension of the cells
+    % togehter. 
+    data = cell2mat(data(:)');
 elseif length(size(data)) == 3 
     nbCond = size(data,3);
     data=reshape(data,[size(data,1),size(data,2)*nbCond]);
