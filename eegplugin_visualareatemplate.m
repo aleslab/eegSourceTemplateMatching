@@ -9,7 +9,8 @@
 %   trystrs    - [struct] "try" strings for menu callbacks.
 %   catchstrs  - [struct] "catch" strings for menu callbacks.
 %
-% Author: Justin Ales, University of St Andrews, 2019
+% Author: Justin Ales, University of St Andrews, 2022
+%% 
 
 
 % Copyright (C) 2022 Justin Ales
@@ -51,12 +52,19 @@ function vers = eegplugin_visualareatemplate(fig, trystrs, catchstrs)
     % --------------
     comvisualareatemplate = [trystrs.no_check '[STUDY ALLEEG LASTCOM] = pop_visualareatemplate(STUDY, ALLEEG);' catchstrs.new_and_hist];
 
+    comcreatetemplate = [trystrs.no_check '[STUDY ALLEEG LASTCOM] = pop_create_custom_template(STUDY, ALLEEG);' catchstrs.new_and_hist];
+
     % create menus if necessary
     % -------------------------
 %     submenu = uimenu( menu, 'Label', 'Visual Area Templates', 'separator', 'on');
 
+    
+    uimenu( menu, 'Label', 'Create Custom Template', ...
+        'CallBack', comcreatetemplate,...
+        'Separator', 'on','userdata', 'startup:on;study:on');
     uimenu( menu, 'Label', 'Fit Visual Area Templates', ...
         'CallBack', comvisualareatemplate,...
-        'Separator', 'on','userdata', 'startup:on;study:on');
+        'Separator', 'off','userdata', 'startup:on;study:on');
+    
 
   

@@ -1,4 +1,4 @@
-% pop_visualareatemplate() - Fit data with area templates 
+% pop_create_custom_template() - Create a custom electrode montage template
 %
 % Usage:
 %   >> [STUDY, ALLEEG, com] = pop_visualareatemplate(varargin)
@@ -30,7 +30,7 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function [STUDY, ALLEEG, com] = pop_visualareatemplate(varargin)
+function [STUDY, ALLEEG, com] = pop_create_custom_template(varargin)
 
 com = '';
 
@@ -67,13 +67,10 @@ if nargin < 3
     geometry = {[10 30 5]};
     geomvert = [1];
 
+    defaultTemplateFilename = fullfile(STUDY.filepath,'customTemplate.mat')
 
-    if isfield(STUDY.etc,'templateFilename')
-        templateFilename= STUDY.etc.templateFilename
-    end
-
-    uilist = {{ 'style' 'text' 'string' 'Template file:' } ...
-               {'style', 'edit', 'string', templateFilename,'tag','templateFile'} ...  
+    uilist = {{ 'style' 'text' 'string' 'Template filename to save:' } ...
+               {'style', 'edit', 'string', defaultTemplateFilename,'tag','templateFile'} ...  
                {'style' 'pushbutton' 'string' '...'   'tag' 'browse' 'Callback' select_com} ...
               };
 
@@ -84,7 +81,6 @@ if nargin < 3
     if isempty(result), return; end   
 
     templateFilename = structOut.templateFile
-
     
 else
     
@@ -104,57 +100,14 @@ end
 
 %Translate
 
+customTemplate = createCustomTemplates(ALLEEG(1).chanlocs,ALLEEG(1).ref);
 
-customTemplate = load(templateFilename)
-
-[STUDY, erpdata, times, setinds, cinds] = std_readdata(STUDY, ALLEEG, 'channels', { ALLEEG(1).chanlocs(:).labels },'datatype','erp');
-
-%Average across participants. 
-%Note: Need to transpose EEGlab data so that electrodes are the 
-%first dimension
-
-averageErpData = cell(size(erpdata));
+save(templateFilename,'-struct','customTemplate');
 
 
-for iCond = 1:length(erpdata)
-    %Average across participants
-    averageDataSingleCondition = mean(erpdata{iCond},3);
-    
-    %Set electrodes as first dimesion
-    averageErpData{iCond} = permute(averageDataSingleCondition,[2 1]);   
-
-end
-
-
-%Submit average data to template fit routine:
-templateFitData = fitEEGTemplates(averageErpData, customTemplate.weights);
-
-
-
-
-%Plot every visual area ROI in a different sublot
-%with 2 columns for the plots
-%Plot every condition as a different color
-
-absMaxFitData = max(max(abs(cell2mat(templateFitData))));
-figure()
-
-for iCond = 1:numel(templateFitData)
-
-    numRois=size(customTemplate.listROIs,2)
-    
-    for iRoi=1:numRois
-        subplot(ceil(numRois/2),2,iRoi)
-        hold on;
-        plot(times,templateFitData{iCond}(iRoi,:))
-        ylim( [-absMaxFitData, absMaxFitData])
-        title(customTemplate.listROIs{iRoi})
-            
-    end
-end
-
+STUDY.etc.templateFilename = templateFilename;
 
 % History string
-com = sprintf('[%s %s] = pop_visualareatemplate(%s,%s, %s);', inputname(1),inputname(2),inputname(1),inputname(2), vararg2str({structOut.templateFile}));
+com = sprintf('[%s %s] = pop_create_custom_template(%s,%s, %s);', inputname(1),inputname(2),inputname(1),inputname(2), vararg2str({structOut.templateFile}));
 
 end
