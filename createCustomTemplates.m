@@ -92,7 +92,7 @@ else
     elecExcludedIndex = find(~tf); elecIncludedIndex = find(tf);
 end
 if ~isempty(elecExcludedIndex)
-    disp('%d electrodes do not have location data',sum(~tf))
+    fprintf('%d electrodes do not have location data \n',sum(~tf))
 end
 
 % deal with optional inputs
@@ -329,7 +329,7 @@ if eeglabUser && plotMap == 1
     figure('position', [200, 200, 1000, 200])
     for roi=1:length(templates1005.listROIs)
         subplot(2,9,loc(roi))
-        topoplot(customTemplates.weights(:,roi),channelInfo,'colormap','jet');
+        topoplot(customTemplates.weights(:,roi),channelInfo(elecIncludedIndex),'colormap','jet');
         caxis([-mm mm]);
         title(customTemplates.listROIs(roi));
         axis equal
