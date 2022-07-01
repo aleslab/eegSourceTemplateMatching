@@ -1,8 +1,9 @@
 function customTemplates = createCustomTemplates(channelInfo,varargin)
-%createCustomTemplates creates EEG templates according to user's montage.  
+%createCustomTemplates creates EEG templates according to user's montage. 
 %   CUSTOMTEMPLATES = createCustomTemplates(channelInfo) returns
 %   topographic EEG templates for 18 functional brain regions according to
-%   the channel locations defined in channelInfo. 
+%   the channel locations defined in channelInfo. The templates can be saved 
+%   and used for other experiments with the same montage.   
 %   CUSTOMTEMPLATES is a structure defined with the following fields:
 %   	'weights'               - Scalp response. N-by-M matrix with N electrodes and 
 %                                 M brain regions (18). 

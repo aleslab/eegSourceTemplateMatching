@@ -1,7 +1,7 @@
-function [areaActivity,lambda,residualNorm,solutionNorm,regularizedInverse] = fitEEGTemplates(data, templates, plotLcurve, lambda)
+function [areaActivity,areaActivityUnscaled,lambda,residualNorm,solutionNorm,regularizedInverse] = fitEEGTemplates(data, templates, plotLcurve, lambda)
 %fitEEGTemplates fits EEG-templates (topographies of functional brain areas) to EEG-data
 %   A = fitEEGTemplates(data, templates) returns a matrix A containing the
-%   normalised (from -1 to 1) contribution of functional brain regions to the EEG signal. 
+%   scaled (from -1 to 1) contribution of functional brain regions to the EEG signal. 
 %   Its format corresponds to the input data (see below).
 %
 %   DATA is the average (across participants) EEG data. For a single
@@ -25,7 +25,8 @@ function [areaActivity,lambda,residualNorm,solutionNorm,regularizedInverse] = fi
 %                         instead of the one computed by the function. 
 %
 %   OPTIONAL OUTPUT
-%   [areaActivity, lambda,residualNorm,solutionNorm,regularizedInverse] = fitEEGTemplates(data, templates)
+%   [areaActivity, areaActivityUnscaled, lambda,residualNorm,solutionNorm,regularizedInverse] = fitEEGTemplates(data, templates)
+%       'areaActivityUnscaled'  - unscaled contribution of each brain regions    
 %       'lambda'                - regularisation parameter used in the function. 
 %       'residualNorm'          - residuals of the minimum-norm estimates 
 %       'solutionNorm'          - solutions of the minimum-norm estimates 
@@ -104,22 +105,24 @@ end
 % compute results for the best regularisation
 residualNorm = zeros(1,size(data,2));
 solutionNorm = zeros(1,size(data,2));
-betaMinNormBest = zeros([size(templates,2) size(data, 2)]);
+areaActivityUnscaled = zeros([size(templates,2) size(data, 2)]);
 for ll = 1:size(data, 2)
-    [betaMinNormBest(:, ll),residualNorm(:,ll),solutionNorm(:,ll)] = tikhonov(u, s, v, data(:, ll), lambda);
+    [areaActivityUnscaled(:, ll),residualNorm(:,ll),solutionNorm(:,ll)] = tikhonov(u, s, v, data(:, ll), lambda);
 end
 
 % normalize betas (contribution) across all ROIs & conditions
-areaActivity = betaMinNormBest / max(abs(betaMinNormBest(:)));
+areaActivity = areaActivityUnscaled / max(abs(areaActivityUnscaled(:)));
 
 % if multiple conditions, reshape betas to correspond to its input format
 if exist('sizeData','var') % input EEG data is cell
     range = cell2mat(arrayfun(@(x) sizeData{x}(2),1:length(sizeData),'uni',false));
     cumul = [0 cumsum(range)];
+    areaActivityUnscaled = arrayfun(@(x) areaActivityUnscaled(:,cumul(x)+1:cumul(x+1)),1:length(sizeData),'uni',false);
     areaActivity = arrayfun(@(x) areaActivity(:,cumul(x)+1:cumul(x+1)),1:length(sizeData),'uni',false);
     residualNorm = arrayfun(@(x) residualNorm(:,cumul(x)+1:cumul(x+1)),1:length(sizeData),'uni',false);
     solutionNorm = arrayfun(@(x) solutionNorm(:,cumul(x)+1:cumul(x+1)),1:length(sizeData),'uni',false);
 elseif exist('nbCond','var') % input EEG data is 3D mat
+    areaActivityUnscaled = reshape(areaActivityUnscaled,[size(areaActivityUnscaled,1),size(areaActivityUnscaled,2)/nbCond,nbCond]);
     areaActivity = reshape(areaActivity,[size(areaActivity,1),size(areaActivity,2)/nbCond,nbCond]);
     residualNorm = reshape(residualNorm,[size(residualNorm,2)/nbCond,nbCond]);
     solutionNorm = reshape(solutionNorm,[size(solutionNorm,2)/nbCond,nbCond]);

@@ -2,11 +2,12 @@
 
 A toolbox for fitting ERP data to group average topographic templates created from functional areas mapped by fMRI and the topographies calculated using individually defined BEM forward models. 
 
-This toolbox can be used to determine the normalised contribution (from -1 to 1) of functional brain 
+This toolbox can be used to determine the contribution of functional brain 
 sources to the EEG scalp  signal by fitting these topographic templates (which represent 
 the scalp activity of 18 visual areas) to the EEG data.
+The EEG data should not contained large artefacts (eye-blinks, muscle, etc.) which could make the localisation fails. 
 
-This toolbox is designed to work with both EEGLAB and FieldTrip. For EEGLAB a "STUDY" design is required. This toolbox contains a rudimentary EEGLAB plugin that can be run from the GUI. However, for more control use it as a script (see ExampleScript_EEGLAB_study.m)
+This toolbox is designed to work with both EEGLAB and FieldTrip. This toolbox contains a rudimentary EEGLAB plugin that can be run from the GUI. For this, a "STUDY" design is required. However, for more control use it as a script (see ExampleScript_EEGLAB_study.m)
 
 Overview of steps to use this toolbox:
 
@@ -19,7 +20,7 @@ from a 10-05 system (high density electrode montage) that matches your set of el
 mytemplates = createCustomTemplates(mychannellocations)
 It is recommended to plot mytemplates as a sanity check (set as default for 
 EEGLAB data, otherwise plot as you would for any topography). 
-You only need to do this step once for a given EEG montage.
+You can save the templates and only do this step once for a given EEG montage.
 
 2. Run fitEEGTemplates to obtain the normalised contributions of functional 
 brain sources to your EEG data. This function uses a L-curve regularisation. 
@@ -36,7 +37,8 @@ Getting Started options:
 
 
 ExampleScript.m
-This file creates a toy 16 channel montage and simulates activity over time in V1 in condition 1 and hMT+.
+This file creates a toy 32 channel montage and simulates activity over time in V1 in condition 1 and hMT+ in condition 2.
+Custom templates are created for the 32 channel montage. The activity is recovered in the 18 visual areas and plotted for the 2 conditions.
 
 
 ExampleScript_EEGLAB_study.m
