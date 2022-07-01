@@ -44,11 +44,12 @@ dataCond2 = bsxfun(@minus,dataCond2, mean(dataCond2));
 
 
 % read channel locations for the simulated activity
-% in EEGLAB can be loaded from a file using readlocs or can look up 
-% locations for a set of labelled electrodes. It is recommended to choose 
-% MNI to load the locations of your electrodes. Here it will be:
-% chanlocs = struct('labels', setOfChannels);
-% channelInfo = pop_chanedit( chanlocs );
+% in EEGLAB channel locations can be loaded from a file using readlocs or 
+% can look up locations for a set of labelled electrodes. It is recommended 
+% to choose MNI to load the locations of your electrodes. 
+% EEG.chanlocs = struct('labels', setOfChannels);
+% EEG.nbchan = length(setOfChannels); EEG.chaninfo.nosedir = '+X';
+% EEG = pop_chanedit( EEG );
 
 % in Fieldtrip can use ft_read_sens
 % The locations of the channels can also be created "manually". Below, it
@@ -95,6 +96,7 @@ channelInfo.chanpos = [-27	83	-3
 % Try myTemplates = createCustomTemplates(channelInfo) for other options or
 % read the help in the function
 myTemplates = createCustomTemplates(channelInfo,0); 
+% for EEGLAB: myTemplates = createCustomTemplates(EEG.chanlocs,0); 
 
 %% fit data
 % data simulated with 90 timepoints, peak activation half way (45)
