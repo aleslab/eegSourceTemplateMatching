@@ -161,8 +161,10 @@ end
 
 
 % if EEGLAB 'average" label is input set to refIndex to 0; 
-if ischar(refIndex) && strmatch(lower(refIndex),'average')
-    refIndex = 0;
+if ischar(refIndex) 
+    if strcmpi(refIndex,'average') || strcmpi(refIndex,'averef')
+        refIndex = 0;
+    end
 end
 
 while length(refIndex)~=1 || ~ismember(refIndex,0:length(chanLabelsData)) % include 0 for average reference
@@ -177,7 +179,7 @@ end
 % load standard 10-05 templates 
 % File assumed to be in the same directory, if it cannot be found, user 
 % is prompted to pick the directory manually
-templateFile = ['templates' filesep 'template_Standard_1005.mat'];
+templateFile = 'template_Standard_1005.mat';
 templateDir = 1;
 while ~exist(templateFile,'file') && templateDir~=0
 %     uiwait(msgbox('Could not find template_Standard_1005.mat file','Information','modal'));
@@ -288,8 +290,8 @@ title('Best matching electrodes')
 
 
 if ~isempty(elecExcludedIndex)
-    warning(['Some electrodes have NOT be included in the templates and will need to be removed from your data '...
-    'before running templateFit (the list is in electrodesExcludedIndex and electrodesExcludedLabels)'])
+    warning(['Some electrodes have NOT been included in the templates and will not be used for fitting the data.'...
+    'This might be external (eye) electrodes but check the list in electrodesExcludedIndex and electrodesExcludedLabels'])
 end
 
 

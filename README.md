@@ -49,8 +49,10 @@ You can use this dataset from EEGLAB for testing:  https://sccn.ucsd.edu/eeglab/
 
 EEGLAB Plugin:
 
-Ensure all the files are on your matlab path before starting EEGLAB so the plugin is loaded into EEGLAB. 
-Load a study. If not already computed compute appropriate ERP's for your study for -all- electrodes (important because template uses all electrods). Then under STUDY menu choose "create custom template".  This will save a custom template file.  Look at the figures to ensure the template is aligned with your electrode montage (to within about a cm). Then select "Fit Visual Area Templates" this should have your template file already chosen.  This should create a plot with the results of the template fit.
+To use it as a EEGLAB plugin, the toolbox should be located in the EEGLAB/plugins folder before starting EEGLAB. 
+Load a study. If not already computed compute appropriate ERP's for your study for -all- electrodes (important because template uses all electrods). 
+Then under STUDY menu choose "create custom template".  This will save a custom template file.  Look at the figures to ensure the template is aligned with your electrode montage (to within about a cm). 
+Then select "Fit Visual Area Templates" this should have your template file already chosen.  This should create a plot with the results of the template fit.
 
 
 

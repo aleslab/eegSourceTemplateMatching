@@ -107,7 +107,7 @@ end
 
 customTemplate = load(templateFilename)
 
-[STUDY, erpdata, times, setinds, cinds] = std_readdata(STUDY, ALLEEG, 'channels', { ALLEEG(1).chanlocs(:).labels },'datatype','erp');
+[STUDY, erpdata, times, setinds, cinds] = std_readerp(STUDY, ALLEEG, 'channels', { ALLEEG(1).chanlocs(:).labels });
 
 %Average across participants. 
 %Note: Need to transpose EEGlab data so that electrodes are the 
