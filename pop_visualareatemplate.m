@@ -127,7 +127,7 @@ end
 
 
 %Submit average data to template fit routine:
-templateFitData = fitEEGTemplates(averageErpData, customTemplate.weights);
+templateFitData = fitEEGTemplates(averageErpData, customTemplate);
 
 
 

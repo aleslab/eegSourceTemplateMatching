@@ -1,9 +1,12 @@
 % Example script 
-% This script simulates activity over time in V1 in condition 1 and hMT+ in
-% condition 2 for a montage with 32 electrodes. 
-% Then, templates corresponding to the 32 electrodes montage are created  
-% using createCustomTemplates. The activity is recovered from functional 
+% step 1. simulates activity over time in V1 in condition 1 and hMT+ in
+% condition 2 for a montage with 32 electrodes. [go directly to next steps
+% for examples in using the toolbox]
+% step 2. the templates corresponding to the 32 electrodes montage are   
+% created using createCustomTemplates. 
+% step 3. The activity is recovered from functional 
 % brain areas using fitEEGTemplates. 
+% step 4. plots the recovered activity in different brain areas
 % If it works, you should see some figures showing the alignment of the
 % electrodes with the specified 32 electrodes montage. 
 % The last 2 figures should look similar. One is the simulated activity,
@@ -11,7 +14,7 @@
 % functional brain areas for the 2 conditions (in blue and red).  
 
 
-%% simulate activity for 2 conditions 
+%% step 1. simulate activity for 2 conditions 
 % (corresponding to the EEG average across participants in 2 conditions)
 load(['templates' filesep 'template_Standard_1005.mat'])
 % use a montage with 32 electrodes
@@ -90,7 +93,7 @@ channelInfo.chanpos = [-27	83	-3
 0	63	61
 0	0	88];
 
-%% create templates corresponding to the montage
+%% step 2. create templates corresponding to the montage
 % the following uses an average reference (0), which match the reference of
 % the data
 % Try myTemplates = createCustomTemplates(channelInfo) for other options or
@@ -98,7 +101,7 @@ channelInfo.chanpos = [-27	83	-3
 myTemplates = createCustomTemplates(channelInfo,0); 
 % for EEGLAB: myTemplates = createCustomTemplates(EEG.chanlocs,0); 
 
-%% fit data
+%% step 3. fit data
 % data simulated with 90 timepoints, peak activation half way (45)
 % in 2 conditions (one with V1 activation, the other with hMT+)
 % put the 2 conditions in the save variable (assumes that the simulated
@@ -108,7 +111,7 @@ averageData(:,:,2) = dataCond2;
 % for a cell it would be: averageData{1} = dataCond1; averageData{2} = dataCond2;
 areaActive = fitEEGTemplates(averageData,myTemplates);
 
-%% plot
+%% step 4. plot
 figure; hold on
 loc = [1:9;10:18]; loc = loc(:);
 for area=1:length(templates1005.listROIs)

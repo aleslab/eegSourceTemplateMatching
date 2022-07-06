@@ -29,7 +29,8 @@ customTemplate = createCustomTemplates(EEG(1).chanlocs,EEG(1).ref)
 %Read the erp data for the study
 %NOTE: These need to have been precomputed using EEGLAB.  THey only get red
 %in not computed. 
-[STUDY, erpdata, times, setinds, cinds] = std_readdata(STUDY, ALLEEG, 'channels', { ALLEEG(1).chanlocs(:).labels },'datatype','erp');
+% [STUDY, erpdata, times, setinds, cinds] = std_readdata(STUDY, ALLEEG, 'channels', { ALLEEG(1).chanlocs(:).labels },'datatype','erp');
+[STUDY, erpdata, times, setinds, cinds] = std_readerp(STUDY, ALLEEG, 'channels', { ALLEEG(1).chanlocs(:).labels });
 
 
 %Average across participants. 
@@ -50,7 +51,7 @@ end
 
 
 %Submit average data to template fit routine:
-templateFitData = fitEEGTemplates(averageErpData, customTemplate.weights);
+templateFitData = fitEEGTemplates(averageErpData, customTemplate);
 
 
 
