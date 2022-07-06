@@ -82,6 +82,13 @@ elseif length(size(data)) == 3
     data=reshape(data,[size(data,1),size(data,2)*nbCond]);
 end
 
+% only keep included electrodes from the template if relevant
+if exist('templateStruct','var')
+    if ~isempty(templateStruct.electrodesExcludedIndex)
+        data = data(templateStruct.electrodesIncludedIndex);
+    end
+end
+
 % check that templates and data have the same number of electrodes
 % if not, return an error
 if size(templates,1) ~= size(data,1)
