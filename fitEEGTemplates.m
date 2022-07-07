@@ -65,6 +65,7 @@ if (nargin==3), lambda = []; end % plot Lcurve & compute best lambda
 
 % get weights from templates if struct
 if isstruct(templates)
+    templateStruct = templates;
     templates = templates.weights;
 end
 
