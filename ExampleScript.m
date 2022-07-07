@@ -22,7 +22,7 @@ setOfChannels = {'Fp1' 'AF3' 'F7' 'F3' 'FC1' 'FC5' 'T7' 'C3' 'CP1' 'CP5'...
     'P7' 'P3' 'Pz' 'PO3' 'O1' 'Oz' 'O2' 'PO4' 'P4' 'P8' 'CP6' 'CP2' 'C4'...
     'T8' 'FC6' 'FC2' 'F4' 'F8' 'AF4' 'Fp2' 'Fz' 'Cz'};
 % get indexes corresponding to this set of channels from the templates
-matchIndex = cell2mat(arrayfun(@(x) cellfind(templates1005.label,setOfChannels{x}),1:length(setOfChannels),'uni',false));
+matchIndex = cell2mat(arrayfun(@(x) cellfind(templates.label,setOfChannels{x}),1:length(setOfChannels),'uni',false));
 
 cond1ROI = [1 2]; % bilateral V1 active  
 cond2ROI = [17 18]; % bilateral hMT+ active 
@@ -30,7 +30,7 @@ cond2ROI = [17 18]; % bilateral hMT+ active
 % 90 timepoints, peak activation at 45  
 cosFilt = cos(-pi:pi/45:pi-pi/45);
 cosFilt(cosFilt<0) = 0;
-simulCond = zeros(size(templates1005.listROIs,2),length(cosFilt),2);
+simulCond = zeros(size(templates.listROIs,2),length(cosFilt),2);
 simulCond(cond1ROI,:,1) = repmat(cosFilt,length(cond1ROI),1);
 simulCond(cond2ROI,:,2) = repmat(cosFilt,length(cond1ROI),1);
 
@@ -38,8 +38,8 @@ simulCond(cond2ROI,:,2) = repmat(cosFilt,length(cond1ROI),1);
 simulCond = simulCond + randn(size(simulCond))*0.1;
 
 % simulate data over electrodes
-dataCond1 = templates1005.weights(matchIndex,:) * simulCond(:,:,1);
-dataCond2 = templates1005.weights(matchIndex,:) * simulCond(:,:,2);
+dataCond1 = templates.weights(matchIndex,:) * simulCond(:,:,1);
+dataCond2 = templates.weights(matchIndex,:) * simulCond(:,:,2);
 
 % reference data to average 
 dataCond1 = bsxfun(@minus,dataCond1, mean(dataCond1));
@@ -114,11 +114,11 @@ areaActive = fitEEGTemplates(averageData,myTemplates);
 %% step 4. plot
 figure; hold on
 loc = [1:9;10:18]; loc = loc(:);
-for area=1:length(templates1005.listROIs)
+for area=1:length(templates.listROIs)
     subplot(2,9,loc(area)); hold on
     plot(simulCond(area,:,1))
     plot(simulCond(area,:,2))
-    title(templates1005.listROIs(area))
+    title(templates.listROIs(area))
     ylim([-1 1])
     xlabel('time')
 end
@@ -126,7 +126,7 @@ legend('cond 1 simulates V1', 'cond 2 simulates hMT+','location','best')
 
 figure; hold on
 loc = [1:9;10:18]; loc = loc(:);
-for area=1:length(templates1005.listROIs)
+for area=1:length(templates.listROIs)
     subplot(2,9,loc(area)); hold on
     plot(areaActive(area,:,1))
     plot(areaActive(area,:,2))
