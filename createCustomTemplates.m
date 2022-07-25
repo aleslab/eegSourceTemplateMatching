@@ -45,8 +45,8 @@ function customTemplates = createCustomTemplates(channelInfo,varargin)
 %                     By default the coordinate system is ALS for EEGLAB 
 %                     users, RAS otherwise. Other coordinate system can 
 %                     potentially be added in future release.   
-%       'interpol'  - default 0, set to 1 to use interpolation method 
-%                     instead of closest electrode to fit the montage
+%       'interpol'  - default 1, set to 0 to use closest electrode weight 
+%                     instead of interpolation method 
 %   
 %   USAGE: 
 %       % Create custom EEG templates from data analysed with EEGLAB
@@ -75,8 +75,8 @@ function customTemplates = createCustomTemplates(channelInfo,varargin)
 % addpath('subfunctions')
 
 % 4 maximum optional inputs
-if nargin>4
-    error('Maximum 4 optional inputs')
+if nargin>5
+    error('Maximum 5 inputs when calling the function')
 end
 
 if length(channelInfo) == 1 % not eeglab
@@ -97,7 +97,7 @@ end
 
 % deal with optional inputs
 % first set defaults
-optargs = {[],1,coordsys,0};
+optargs = {[],1,coordsys,1};
 % find empty user inputs
 indexOpt = cellfun(@(x) ~isempty(x), varargin);
 % overwrite defaults skipping empty ones
