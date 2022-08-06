@@ -14,7 +14,7 @@ Overview of steps to use this toolbox:
 1. Find the EEG templates that correspond to your EEG montage. The templates and your 
 data should share the same electrodes and reference. 
 A set of standard EGI templates are provided in the templates folder. 
-You can also create, for any EEG montage, your own templates based on your 
+You can also create, for any EEG montage but EGI, your own templates based on your 
 set-up by running createCustomTemplates. This function will extract templates
 from a 10-05 system (high density electrode montage) that matches your set of electrodes. 
 mytemplates = createCustomTemplates(mychannellocations)

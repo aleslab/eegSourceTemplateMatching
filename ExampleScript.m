@@ -3,7 +3,9 @@
 % condition 2 for a montage with 32 electrodes. [go directly to next steps
 % for examples in using the toolbox]
 % step 2. the templates corresponding to the 32 electrodes montage are   
-% created using createCustomTemplates. 
+% created using createCustomTemplates. (For EGI, please use the EGI
+% montages as they cover electrode locations outside the standard 10-05
+% system)
 % step 3. The activity is recovered from functional 
 % brain areas using fitEEGTemplates. 
 % step 4. plots the recovered activity in different brain areas
