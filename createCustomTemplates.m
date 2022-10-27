@@ -46,9 +46,12 @@ function customTemplates = createCustomTemplates(channelInfo,varargin)
 %                     users, RAS otherwise. Other coordinate system can 
 %                     potentially be added in future release.   
 %       'interpol'  - default 0, set to 1 to use interpolation method 
-%                     instead of closest electrode (preferable)  
-%                     
-%   
+%                     instead of closest electrode (preferable)
+%       'splitV1'    - default 0, set to 1 to create separate templates for 
+%                     V1 ventral and V1 dorsal. Note that whereas the other 
+%                     ROIs are based on 50 individuals, V1V and V1D are 
+%                     based on 27 individuals.
+%
 %   USAGE: 
 %       % Create custom EEG templates from data analysed with EEGLAB
 %       mytemplates = createCustomTemplates(EEG.chanlocs)
@@ -75,9 +78,9 @@ function customTemplates = createCustomTemplates(channelInfo,varargin)
 
 % addpath('subfunctions')
 
-% 4 maximum optional inputs
-if nargin>5
-    error('Maximum 5 inputs when calling the function')
+% 5 maximum optional inputs
+if nargin>6
+    error('Maximum 6 inputs when calling the function')
 end
 
 if length(channelInfo) == 1 % not eeglab
@@ -104,7 +107,7 @@ indexOpt = cellfun(@(x) ~isempty(x), varargin);
 % overwrite defaults skipping empty ones
 optargs(indexOpt) = varargin(indexOpt);
 % put in usable variables
-[refIndex, plotMap, coordsys, interpolation] = optargs{:};
+[refIndex, plotMap, coordsys, interpolation,splitV1] = optargs{:};
 fprintf('Assumes %s coordinate system.\n',coordsys)
 
     
@@ -180,12 +183,16 @@ end
 % load standard 10-05 templates 
 % File assumed to be in the same directory, if it cannot be found, user 
 % is prompted to pick the directory manually
-templateFile = 'template_Standard_1005.mat';
-templateDir = 1;
-while ~exist(templateFile,'file') && templateDir~=0
+if splitV1
+    templateFile = 'template_V1Split_Standard_1005.mat';
+else
+    templateFile = 'template_Standard_1005.mat';
+end
+templateDir = 1; 
+while ~exist(templateFile,'file') && templateDir~=0 
 %     uiwait(msgbox('Could not find template_Standard_1005.mat file','Information','modal'));
-    templateDir = uigetdir('','Please select the directory containing template_Standard_1005.mat');
-    templateFile = [templateDir filesep 'template_Standard_1005.mat'];
+    templateDir = uigetdir('',['Please select the directory containing ' templateFile]); % if user cancels, templateDir=0
+    templateFile = [templateDir filesep templateFile];
 end
 load(templateFile)
 
