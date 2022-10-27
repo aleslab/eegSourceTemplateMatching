@@ -18,7 +18,7 @@
 
 %% step 1. simulate activity for 2 conditions 
 % (corresponding to the EEG average across participants in 2 conditions)
-load(['templates' filesep 'template_Standard_1005.mat'])
+load('template_Standard_1005.mat')
 % use a montage with 32 electrodes
 setOfChannels = {'Fp1' 'AF3' 'F7' 'F3' 'FC1' 'FC5' 'T7' 'C3' 'CP1' 'CP5'...
     'P7' 'P3' 'Pz' 'PO3' 'O1' 'Oz' 'O2' 'PO4' 'P4' 'P8' 'CP6' 'CP2' 'C4'...
