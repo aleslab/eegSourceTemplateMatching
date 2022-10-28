@@ -185,13 +185,15 @@ end
 % is prompted to pick the directory manually
 if splitV1
     templateFile = 'template_V1Split_Standard_1005.mat';
+    templateFileOriginal = 'template_V1Split_Standard_1005.mat';
 else
     templateFile = 'template_Standard_1005.mat';
+    templateFileOriginal = 'template_Standard_1005.mat';
 end
 templateDir = 1; 
-while ~exist(templateFile,'file') && templateDir~=0 
-%     uiwait(msgbox('Could not find template_Standard_1005.mat file','Information','modal'));
-    templateDir = uigetdir('',['Please select the directory containing ' templateFile]); % if user cancels, templateDir=0
+while ~exist(templateFile,'file') && sum(templateDir)~=0 
+    uiwait(msgbox({'Could not find ' templateFileOriginal 'Please select the directory containing the file'},'Error','error'));
+    templateDir = uigetdir('','Please select the directory'); % if user cancels, templateDir=0
     templateFile = [templateDir filesep templateFile];
 end
 load(templateFile)
