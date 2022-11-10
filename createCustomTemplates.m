@@ -101,7 +101,7 @@ end
 
 % deal with optional inputs
 % first set defaults
-optargs = {[],1,coordsys,0};
+optargs = {[],1,coordsys,0,0};
 % find empty user inputs
 indexOpt = cellfun(@(x) ~isempty(x), varargin);
 % overwrite defaults skipping empty ones
